@@ -1,2 +1,4 @@
 
 * Björn Gohla
+  My github profile is [[https://github.com/cgohla][here]], my other github profile is [[http://github.com/bgohla][here]]. My
+  twitter profile is [[https://twitter.com/6d03][here]].
