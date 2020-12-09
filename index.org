@@ -23,3 +23,6 @@
   - my other github profile is [[http://github.com/bgohla][here]]. 
   - I'm on twitter as [[https://twitter.com/6d03][6d03]]. 
   - My arXiv page is [[https://arxiv.org/search/?searchtype=author&query=Gohla%252C+B][here]].
+
+* Acknowledgments
+  Made using [[https://orgmode.org][org-mode]] and [[https://github.com/paulzql/org-html-themes][org-html-themes]].
