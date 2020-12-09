@@ -14,6 +14,12 @@
 #+HTML_HEAD: <script type="text/javascript" src="https://www.pirilampo.org/styles/bigblow/js/hideshow.js"></script>
 #+HTML_HEAD: <script type="text/javascript" src="https://www.pirilampo.org/styles/lib/js/jquery.stickytableheaders.min.js"></script>
 
+#+TITLE: Björn Gohla
+#+AUTHOR: Björn Gohla
+#+EMAIL: b.gohla@gmx.de
+
 * Björn Gohla
-  My github profile is [[https://github.com/cgohla][here]], my other github profile is [[http://github.com/bgohla][here]]. My
-  twitter profile is [[https://twitter.com/6d03][here]].
+  - My github profile is [[https://github.com/cgohla][here]],
+  - my other github profile is [[http://github.com/bgohla][here]]. 
+  - I'm on twitter as [[https://twitter.com/6d03][6d03]]. 
+  - My arXiv page is [[https://arxiv.org/search/?searchtype=author&query=Gohla%252C+B][here]].
