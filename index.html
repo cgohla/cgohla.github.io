@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2020-12-09 Wed 23:06 -->
+<!-- 2020-12-09 Wed 23:59 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Björn Gohla</title>
@@ -245,14 +245,19 @@ for the JavaScript code in this tag.
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#org9b5f612">1. Björn Gohla</a></li>
-<li><a href="#org958b108">2. Acknowledgments</a></li>
+<li><a href="#org570b478">1. Björn Gohla</a></li>
+<li><a href="#org605049f">2. Computing</a>
+<ul>
+<li><a href="#orgde0ed79">2.1. Basic Rewriting</a></li>
+</ul>
+</li>
+<li><a href="#orge9c7067">3. Acknowledgments</a></li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-org9b5f612" class="outline-2">
-<h2 id="org9b5f612"><span class="section-number-2">1</span> Björn Gohla</h2>
+<div id="outline-container-org570b478" class="outline-2">
+<h2 id="org570b478"><span class="section-number-2">1</span> Björn Gohla</h2>
 <div class="outline-text-2" id="text-1">
 <ul class="org-ul">
 <li>My github profile is <a href="https://github.com/cgohla">here</a>,</li>
@@ -263,9 +268,160 @@ for the JavaScript code in this tag.
 </div>
 </div>
 
-<div id="outline-container-org958b108" class="outline-2">
-<h2 id="org958b108"><span class="section-number-2">2</span> Acknowledgments</h2>
+<div id="outline-container-org605049f" class="outline-2">
+<h2 id="org605049f"><span class="section-number-2">2</span> Computing</h2>
 <div class="outline-text-2" id="text-2">
+</div>
+<div id="outline-container-orgde0ed79" class="outline-3">
+<h3 id="orgde0ed79"><span class="section-number-3">2.1</span> Basic Rewriting</h3>
+<div class="outline-text-3" id="text-2-1">
+<p>
+Let me talk a little bit about a cool paper on rewriting theory
+that I'm reading:
+<a href="https://dl.acm.org/citation.cfm?doid=322217.322230">https://dl.acm.org/citation.cfm?doid=322217.322230</a>
+</p>
+
+<p>
+Let's say have a set of items, and you're allowed to hold on to one
+item at a time.
+</p>
+
+<p>
+And there is a bunch of rules, saying which items you're allowed to
+trade for which other items. An obvious question is: Can you get a
+specific item, starting with a given one through repeated
+exchanges?
+</p>
+
+<p>
+If the items are a cherry, a pear, and an egg; and rules saying you
+may exchange Cherries ⇀ Pear, Pear ⇀ Peach, and Egg ⇀ Pear; then
+you can obviously get the Egg from the Cherries in two steps (one
+rule has to be used backwards).
+</p>
+
+<p>
+We would like to know for which rule sets we could program a
+computer to decide this question for us. The paper tells us under
+which conditions on a sets of rules this is possible (and some
+generalizations and applications, which I'm not going to mention).
+</p>
+
+<p>
+Small aside: The problem is trivial when the set of items is
+finite, because we can just enumerate all the possibilities in a
+finite number of steps. The problem becomes interesting, when, for
+example, the items being exchanged are the terms in a language.
+</p>
+
+<p>
+So we have to be a bit more clever.
+</p>
+
+<p>
+First, let's agree to treat the rules as unidirectional. We can use
+them both ways, but they have to have a direction and we are mostly
+interested in using them in the forward direction.
+</p>
+
+<p>
+A property that our rule set might have is called «confluence»:
+Starting with any item α, and any two sequences of exchanges
+yielding ξ and υ respectively, there is always an item β, that can
+be obtained from both ξ and υ through further sequences of
+exchanges.
+</p>
+
+<p>
+In a picture:
+</p>
+
+<p>
+α → ξ
+↓   ↓
+υ → β
+</p>
+
+<p>
+where the arrows are sequences of forward exchanges ⇀ ⋯ ⇀.
+</p>
+
+<p>
+The first important (easy) result in the paper now says that any
+sequence of forward and backward applications of our exchange
+rules, e.g. ↼ ↼ ↼ ⇀ ↼ ⇀ ↼ ⇀ ↼ ⇀ ⇀, can be replaced by a sequence of
+just forward applications followed by a sequence of just backward
+applications, e.g. ⇀ ⇀ ⇀ ↼ ↼, <span class="underline">if</span> our rule set has the confluence
+property.
+</p>
+
+<p>
+Another property that our rule system may have, is called
+«well-foundedness»: It requires that, if we start with any item, say
+α, and we keep using any applicable exchange rule in the forward
+direction, we must eventually get some item β, that can not be
+exchanged for anything else.
+</p>
+
+<p>
+I.e., in a well-founded rule system no sequence of forward
+exchanges can go on forever; arguably an essential property if we want
+to write a computer program, that always gives an answer.
+</p>
+
+<p>
+Now, if our rule system has both the confluence and the
+well-foundedness property, then not only will every sequence of
+exchanges eventually end, but for every α we start with, there is
+exactly one β that it can end with.
+</p>
+
+<p>
+And this is actually easy to see: lets say you started with α, by
+well-foundedness, after a finite number of forward steps you can't
+go any further and end up with β; but maybe if you had used a
+different sequence of steps, you would have ended up with β'.
+</p>
+
+<p>
+Now confluence tell us there are sequences of further steps, that
+would give us a γ from both β and β'. But how could we possibly
+find these sequences?
+</p>
+
+<p>
+Luckily, our rule system is well-founded, meaning no further
+exchanges of β and β' are possible, so the two sequences we would
+need to find are empty, meaning β and β' (and the putative γ) have
+to be equal.
+</p>
+
+<p>
+So now we have a recipe for solving our initial question of whether
+we can get one item from another by repeated forward and backward
+exchanges (under the assumption that our rule system is confluent
+and well founded):
+</p>
+
+<p>
+Take both items, keep applying the exchange rules in the forward
+direction until you can't go further and you get two items uniquely
+determined by the starting points; compare them, if they are equal,
+the answer is yes; otherwise it is no.
+</p>
+
+<p>
+These are the generalities that I wanted to share. The actual hard
+work is of course in showing that a given rule system actually is
+well-founded and confluent.
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orge9c7067" class="outline-2">
+<h2 id="orge9c7067"><span class="section-number-2">3</span> Acknowledgments</h2>
+<div class="outline-text-2" id="text-3">
 <p>
 Made using <a href="https://orgmode.org">org-mode</a> and <a href="https://github.com/paulzql/org-html-themes">org-html-themes</a>.
 </p>
@@ -274,7 +430,7 @@ Made using <a href="https://orgmode.org">org-mode</a> and <a href="https://githu
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Björn Gohla</p>
-<p class="date">Created: 2020-12-09 Wed 23:06</p>
+<p class="date">Created: 2020-12-09 Wed 23:59</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
