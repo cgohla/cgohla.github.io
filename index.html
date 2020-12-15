@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2020-12-09 Wed 23:59 -->
+<!-- 2020-12-16 Wed 23:53 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Björn Gohla</title>
@@ -191,6 +191,8 @@
 <script type="text/javascript" src="https://www.pirilampo.org/styles/bigblow/js/bigblow.js"></script>
 <script type="text/javascript" src="https://www.pirilampo.org/styles/bigblow/js/hideshow.js"></script>
 <script type="text/javascript" src="https://www.pirilampo.org/styles/lib/js/jquery.stickytableheaders.min.js"></script>
+<script> MathJax = {  tex: {    inlineMath: [['$', '$'], ['\\(', '\\)']],    packages: ['base', 'newcommand', 'configMacros']  },  svg: {    fontCache: 'global'  }}; </script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <script type="text/javascript">
 /*
 @licstart  The following is the entire license notice for the
@@ -237,6 +239,28 @@ for the JavaScript code in this tag.
  }
 /*]]>*///-->
 </script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        displayAlign: "center",
+        displayIndent: "0em",
+
+        "HTML-CSS": { scale: 100,
+                        linebreaks: { automatic: "false" },
+                        webFont: "TeX"
+                       },
+        SVG: {scale: 100,
+              linebreaks: { automatic: "false" },
+              font: "TeX"},
+        NativeMML: {scale: 100},
+        TeX: { equationNumbers: {autoNumber: "AMS"},
+               MultLineWidth: "85%",
+               TagSide: "right",
+               TagIndent: ".8em"
+             }
+});
+</script>
+<script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_HTML"></script>
 </head>
 <body>
 <div id="content">
@@ -245,19 +269,24 @@ for the JavaScript code in this tag.
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#org570b478">1. Björn Gohla</a></li>
-<li><a href="#org605049f">2. Computing</a>
+<li><a href="#org2ca079e">1. Björn Gohla</a></li>
+<li><a href="#org1d0967b">2. Computing</a>
 <ul>
-<li><a href="#orgde0ed79">2.1. Basic Rewriting</a></li>
+<li><a href="#org52821c0">2.1. Basic Rewriting</a></li>
 </ul>
 </li>
-<li><a href="#orge9c7067">3. Acknowledgments</a></li>
+<li><a href="#orgac8c7a7">3. Math</a>
+<ul>
+<li><a href="#orgda40dc3">3.1. Highlight: The Categorical Origins of Lebesgue Integration</a></li>
+</ul>
+</li>
+<li><a href="#org386cb97">4. Acknowledgments</a></li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-org570b478" class="outline-2">
-<h2 id="org570b478"><span class="section-number-2">1</span> Björn Gohla</h2>
+<div id="outline-container-org2ca079e" class="outline-2">
+<h2 id="org2ca079e"><span class="section-number-2">1</span> Björn Gohla</h2>
 <div class="outline-text-2" id="text-1">
 <ul class="org-ul">
 <li>My github profile is <a href="https://github.com/cgohla">here</a>,</li>
@@ -268,12 +297,12 @@ for the JavaScript code in this tag.
 </div>
 </div>
 
-<div id="outline-container-org605049f" class="outline-2">
-<h2 id="org605049f"><span class="section-number-2">2</span> Computing</h2>
+<div id="outline-container-org1d0967b" class="outline-2">
+<h2 id="org1d0967b"><span class="section-number-2">2</span> Computing</h2>
 <div class="outline-text-2" id="text-2">
 </div>
-<div id="outline-container-orgde0ed79" class="outline-3">
-<h3 id="orgde0ed79"><span class="section-number-3">2.1</span> Basic Rewriting</h3>
+<div id="outline-container-org52821c0" class="outline-3">
+<h3 id="org52821c0"><span class="section-number-3">2.1</span> Basic Rewriting</h3>
 <div class="outline-text-3" id="text-2-1">
 <p>
 Let me talk a little bit about a cool paper on rewriting theory
@@ -419,9 +448,123 @@ well-founded and confluent.
 </div>
 </div>
 
-<div id="outline-container-orge9c7067" class="outline-2">
-<h2 id="orge9c7067"><span class="section-number-2">3</span> Acknowledgments</h2>
+<div id="outline-container-orgac8c7a7" class="outline-2">
+<h2 id="orgac8c7a7"><span class="section-number-2">3</span> Math</h2>
 <div class="outline-text-2" id="text-3">
+</div>
+<div id="outline-container-orgda40dc3" class="outline-3">
+<h3 id="orgda40dc3"><span class="section-number-3">3.1</span> Highlight: The Categorical Origins of Lebesgue Integration</h3>
+<div class="outline-text-3" id="text-3-1">
+<p>
+I want to discuss a recent pre-print by Tom Leinster, namely <a href="https://arxiv.org/abs/2011.00412">The
+categorical origins of Lebesgue integration</a>.
+</p>
+
+<p>
+It is a very nice exposition of some very important gadgets in
+functional analysis, namely the vector spaces \(L^p([0,1])\) and
+\(\ell^p\). The part that really caught interest is that the
+aforementioned spaces are initial $F$-algebras in normed vector
+spaces.
+</p>
+
+<p>
+Let me explain why this is nice: \(F\)-algebras are a very basic
+concept from categorical algebra: if \(F\) is a functor \(F: C→C\),
+then an $F$-algebra on an object \(X\) is a $C$-morphism \(\xi:
+   FX→X\). A morphism $f: X → Y $ is an $F$-algebra morphism if
+\(\upsilon\circ Ff = f \circ \xi\).
+</p>
+
+<p>
+A simple example over sets would be the functor \(X \mapsto 1+X\). In
+this case an algebra on a set \(X\) is a pair of functions \(1→X\) and
+\(X→X\). It's easy to see that the natural numbers \(N\) are such an
+algebra, where the first function picks the number 0, and the
+second is the successor function. 
+</p>
+
+<p>
+What makes the natural numbers special among all algebras of this
+kind is that for any other such algebra \(\alpha: 1+A→A\) there is a
+unique function \(f:N→A\), which is an algebra homomorphism.  This is
+essentially a restatement of the Peano axioms.
+</p>
+
+<p>
+Categorically we say that \(1+N→N\) is initial in the category of
+$(1+\_)$-algebras.
+</p>
+
+<p>
+Now let us turn our attention to the category \(\mathrm{Ban}\) of
+Banach spaces and contractive maps, i.e., linear maps of norm at
+most 1. Let's say the ground field is \(\mathbb{R}\)
+</p>
+
+<p>
+The field \(\mathbb{R}\) itself is of course a Banach space in a
+natural way, so it is an object in \(\mathrm{Ban}\). A morphism \(R→V\)
+to another Banach space corresponds to a choice of vector \(v\) in
+\(V\) of norm at most 1. In particular, such Banach spaces with a
+choice of vector of norm less than 1 form a category
+\(\mathbb{R}/\mathrm{Ban}\) where the morphisms are linear
+contractions taking chosen vector to chosen vector. This cateogry
+has an initial object, namely \(\mathbb{R}\) with chosen element 1,
+meaning there is a unique linear contraction \((\mathbb{R},1)→(V,v)\)
+for every \((V,v)\).
+</p>
+
+<p>
+We are now going to define an endo-functor \(F_p\) on \(\mathrm{Ban}\)
+and extend it to \(\mathbb{R}/\mathrm{Ban}\) where \(p\geq 1\) is a
+real number: \(F_p\) takes the vector space \(V\) to the direct sum
+\(V\oplus V\) with the norm given by the $p$-average \[|v+v'| =
+   \left(\frac{1}{2}(|v|^p+|v'|^p)\right)^{\frac{1}{p}}\]. 
+</p>
+
+<p>
+To extend \(F_p\) to \(\mathb{R}/\mathrm{Ban}\) we observe that if our
+chosen vector in \(V\) is \(v\) then in \(V\oplus V\) we can choose
+\(v+v\), and its norm will be exactly \(|v|\) with the norm taken in
+\(V\). If the vector space in question was \(\mathbb{R}\), then \(F_p\)
+of it is \(\mathbb{R}^2\) with the (appropiately scaled)
+$p$-norm. Because \((\mathbb{R},1)\) is initial in our category, The
+diagonal \(\mathbb{R}→\mathbb{R}^2\) is the uniquely determined
+contractive linear map. 
+</p>
+
+<p>
+If we keep iterating \(F_p\) we get
+\(F_^n(\mathbb{R},1)=(\mathbb{R}^{2^n},e)\) where \(e\) is all 1s and
+the norm is the $p$-average over all the entries in a vector. For
+convenince let's \(E_n=F_^n(\mathbb{R},1)\). We get norm preserving
+linear maps \(E_n→E_{n+1}\) that duplicate every entry in a row
+vector.
+</p>
+
+<p>
+We obtain a diagram
+$$
+</p>
+\begin{CD}
+E_0 @> E_1 @> E_2 
+\end{CD}
+<p>
+$$
+</p>
+
+<p>
+It turns out that if we are in the category of Banach spaces, we
+can define
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org386cb97" class="outline-2">
+<h2 id="org386cb97"><span class="section-number-2">4</span> Acknowledgments</h2>
+<div class="outline-text-2" id="text-4">
 <p>
 Made using <a href="https://orgmode.org">org-mode</a> and <a href="https://github.com/paulzql/org-html-themes">org-html-themes</a>.
 </p>
@@ -430,7 +573,7 @@ Made using <a href="https://orgmode.org">org-mode</a> and <a href="https://githu
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Björn Gohla</p>
-<p class="date">Created: 2020-12-09 Wed 23:59</p>
+<p class="date">Created: 2020-12-16 Wed 23:53</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
