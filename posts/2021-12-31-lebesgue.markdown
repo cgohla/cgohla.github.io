@@ -1,0 +1,156 @@
+---
+title: "Highlight: The Categorical Origins of Lebesgue Integration"
+---
+   
+I want to discuss a recent pre-print by Tom Leinster, namely [[https://arxiv.org/abs/2011.00412][The
+categorical origins of Lebesgue integration]].
+
+It is a very nice exposition of some very important gadgets in
+functional analysis, namely the vector spaces $L^p([0,1])$ and
+$\ell^p$. The part that really caught interest is that the
+aforementioned spaces are initial $F$-algebras in normed vector
+spaces.
+
+Let me explain why this is nice: \(F\)-algebras are a very basic
+concept from categorical algebra: if $F$ is a functor $F: C→C$,
+then an $F$-algebra on an object $X$ is a $C$-morphism $\xi:
+FX→X$. A morphism $f: X → Y $ is an $F$-algebra morphism if
+$\upsilon\circ Ff = f \circ \xi$.
+
+A simple example over sets would be the functor $X \mapsto 1+X$. In
+this case an algebra on a set $X$ is a pair of functions $1→X$ and
+$X→X$. It's easy to see that the natural numbers $N$ are such an
+algebra, where the first function picks the number 0, and the
+second is the successor function. 
+
+What makes the natural numbers special among all algebras of this
+kind is that for any other such algebra $\alpha: 1+A→A$ there is a
+unique function $f:N→A$, which is an algebra homomorphism.  This is
+essentially a restatement of the Peano axioms.
+
+Categorically we say that $1+N→N$ is initial in the category of
+$(1+\_)$-algebras.
+
+Now let us turn our attention to the category $\mathrm{Ban}$ of
+Banach spaces and contractive maps, i.e., linear maps of norm at
+most 1. Let's say the ground field is $\mathbb{R}$
+
+The field $\mathbb{R}$ itself is of course a Banach space in a
+natural way, so it is an object in $\mathrm{Ban}$. A morphism $R→V$
+to another Banach space corresponds to a choice of vector $v$ in
+$V$ of norm at most 1. In particular, such Banach spaces with a
+choice of vector of norm less than 1 form a category
+$\mathbb{R}/\mathrm{Ban}$ where the morphisms are linear
+contractions taking chosen vector to chosen vector. This cateogry
+has an initial object, namely $\mathbb{R}$ with chosen element 1,
+meaning there is a unique linear contraction $(\mathbb{R},1)→(V,v)$
+for every $(V,v)$.
+
+We are now going to define an endo-functor $F_p$ on $\mathrm{Ban}$
+and extend it to $\mathbb{R}/\mathrm{Ban}$ where $p\geq 1$ is a
+real number: $F_p$ takes the vector space $V$ to the direct sum
+$V\oplus V$ with the norm given by the $p$-average $$|v+v'| =
+\left(\frac{1}{2}(|v|^p+|v'|^p)\right)^{\frac{1}{p}}$$. 
+
+To extend $F_p$ to $\mathb{R}/\mathrm{Ban}$ we observe that if our
+chosen vector in $V$ is $v$ then in $V\oplus V$ we can choose
+$v+v$, and its norm will be exactly $|v|$ with the norm taken in
+$V$. If the vector space in question was $\mathbb{R}$, then $F_p$
+of it is $\mathbb{R}^2$ with the (appropiately scaled)
+$p$-norm. Because $(\mathbb{R},1)$ is initial in our category, The
+diagonal $\mathbb{R}→\mathbb{R}^2$ is the uniquely determined
+contractive linear map. 
+
+If we keep iterating $F_p$ we get
+$F_^n(\mathbb{R},1)=(\mathbb{R}^{2^n},e)$ where $e$ is all 1s and
+the norm is the $p$-average over all the entries in a vector. For
+convenince let's $E_n=F_^n(\mathbb{R},1)$. We get norm preserving
+linear maps $E_n→E_{n+1}$ that duplicate every entry in a row
+vector.
+
+We obtain a diagram
+$$
+\begin{CD}
+E_0 @> E_1 @> E_2 
+\end{CD}
+$$
+
+It turns out that if we are in the category of Banach spaces, we
+can define
+Highlight: The Categorical Origins of Lebesgue Integration
+
+I want to discuss a recent pre-print by Tom Leinster, namely [[https://arxiv.org/abs/2011.00412][The
+categorical origins of Lebesgue integration]].
+
+It is a very nice exposition of some very important gadgets in
+functional analysis, namely the vector spaces $L^p([0,1])$ and
+$\ell^p$. The part that really caught interest is that the
+aforementioned spaces are initial $F$-algebras in normed vector
+spaces.
+
+Let me explain why this is nice: \(F\)-algebras are a very basic
+concept from categorical algebra: if $F$ is a functor $F: C→C$,
+then an $F$-algebra on an object $X$ is a $C$-morphism $\xi:
+FX→X$. A morphism $f: X → Y $ is an $F$-algebra morphism if
+$\upsilon\circ Ff = f \circ \xi$.
+
+A simple example over sets would be the functor $X \mapsto 1+X$. In
+this case an algebra on a set $X$ is a pair of functions $1→X$ and
+$X→X$. It's easy to see that the natural numbers $N$ are such an
+algebra, where the first function picks the number 0, and the
+second is the successor function. 
+
+What makes the natural numbers special among all algebras of this
+kind is that for any other such algebra $\alpha: 1+A→A$ there is a
+unique function $f:N→A$, which is an algebra homomorphism.  This is
+essentially a restatement of the Peano axioms.
+
+Categorically we say that $1+N→N$ is initial in the category of
+$(1+\_)$-algebras.
+
+Now let us turn our attention to the category $\mathrm{Ban}$ of
+Banach spaces and contractive maps, i.e., linear maps of norm at
+most 1. Let's say the ground field is $\mathbb{R}$
+
+The field $\mathbb{R}$ itself is of course a Banach space in a
+natural way, so it is an object in $\mathrm{Ban}$. A morphism $R→V$
+to another Banach space corresponds to a choice of vector $v$ in
+$V$ of norm at most 1. In particular, such Banach spaces with a
+choice of vector of norm less than 1 form a category
+$\mathbb{R}/\mathrm{Ban}$ where the morphisms are linear
+contractions taking chosen vector to chosen vector. This cateogry
+has an initial object, namely $\mathbb{R}$ with chosen element 1,
+meaning there is a unique linear contraction $(\mathbb{R},1)→(V,v)$
+for every $(V,v)$.
+
+We are now going to define an endo-functor $F_p$ on $\mathrm{Ban}$
+and extend it to $\mathbb{R}/\mathrm{Ban}$ where $p\geq 1$ is a
+real number: $F_p$ takes the vector space $V$ to the direct sum
+$V\oplus V$ with the norm given by the $p$-average $$|v+v'| =
+\left(\frac{1}{2}(|v|^p+|v'|^p)\right)^{\frac{1}{p}}$$. 
+
+To extend $F_p$ to $\mathb{R}/\mathrm{Ban}$ we observe that if our
+chosen vector in $V$ is $v$ then in $V\oplus V$ we can choose
+$v+v$, and its norm will be exactly $|v|$ with the norm taken in
+$V$. If the vector space in question was $\mathbb{R}$, then $F_p$
+of it is $\mathbb{R}^2$ with the (appropiately scaled)
+$p$-norm. Because $(\mathbb{R},1)$ is initial in our category, The
+diagonal $\mathbb{R}→\mathbb{R}^2$ is the uniquely determined
+contractive linear map. 
+
+If we keep iterating $F_p$ we get
+$F_^n(\mathbb{R},1)=(\mathbb{R}^{2^n},e)$ where $e$ is all 1s and
+the norm is the $p$-average over all the entries in a vector. For
+convenince let's $E_n=F_^n(\mathbb{R},1)$. We get norm preserving
+linear maps $E_n→E_{n+1}$ that duplicate every entry in a row
+vector.
+
+We obtain a diagram
+$$
+\begin{CD}
+E_0 @> E_1 @> E_2 
+\end{CD}
+$$
+
+It turns out that if we are in the category of Banach spaces, we
+can define
