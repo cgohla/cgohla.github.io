@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Basic Rewriting</title>
+        <link rel="stylesheet" href="../css/default.css" />
+    </head>
+    <body>
+        <header>
+            <div class="logo">
+                <a href="../">Björn Gohla</a>
+            </div>
+            <nav>
+                <a href="../">Home</a>
+                <a href="../about.html">About</a>
+                <a href="../contact.html">Contact</a>
+                <a href="../archive.html">Archive</a>
+            </nav>
+        </header>
+
+        <main role="main">
+            <h1>Basic Rewriting</h1>
+            <article>
+    <section class="header">
+        Posted on December 10, 2020
+        
+    </section>
+    <section>
+        <p>Let me talk a little bit about a cool paper on rewriting theory that I’m reading: <a href="https://dl.acm.org/citation.cfm?doid=322217.322230" class="uri">https://dl.acm.org/citation.cfm?doid=322217.322230</a></p>
+<p>Let’s say have a set of items, and you’re allowed to hold on to one item at a time.</p>
+<p>And there is a bunch of rules, saying which items you’re allowed to trade for which other items. An obvious question is: Can you get a specific item, starting with a given one through repeated exchanges?</p>
+<p>If the items are a cherry, a pear, and an egg; and rules saying you may exchange <em>Cherries ⇀ Pear</em>, <em>Pear ⇀ Peach</em>, and <em>Egg ⇀ Pear</em>; then you can obviously get the <em>Egg</em> from the <em>Cherries</em> in two steps (one rule has to be used backwards).</p>
+<p>We would like to know for which rule sets we could program a computer to decide this question for us. The paper tells us under which conditions on a sets of rules this is possible (and some generalizations and applications, which I’m not going to mention).</p>
+<p>Small aside: The problem is trivial when the set of items is finite, because we can just enumerate all the possibilities in a finite number of steps. The problem becomes interesting, when, for example, the items being exchanged are the terms in a language.</p>
+<p>So we have to be a bit more clever.</p>
+<p>First, let’s agree to treat the rules as unidirectional. We can use them both ways, but they have to have a direction and we are mostly interested in using them in the forward direction.</p>
+<h2 id="confluence">Confluence</h2>
+<p>A property that our rule set might have is called «confluence»: Starting with any item α, and any two sequences of exchanges yielding ξ and υ respectively, there is always an item β, that can be obtained from both ξ and υ through further sequences of exchanges.</p>
+<p>In a picture:</p>
+<pre><code>α → ξ
+↓   ↓
+υ → β</code></pre>
+<p>where the arrows are sequences of forward exchanges <em>⇀ ⋯ ⇀</em>.</p>
+<p>The first important (but easy) result in the paper now says that any sequence of forward and backward applications of our exchange rules, e.g. <em>↼ ↼ ↼ ⇀ ↼ ⇀ ↼ ⇀ ↼ ⇀ ⇀</em>, can be replaced by a sequence of just forward applications followed by a sequence of just backward applications, e.g. <em>⇀ ⇀ ⇀ ↼ ↼</em>, <em>if</em> our rule set has the confluence property.</p>
+<h2 id="wellfoundedness">Wellfoundedness</h2>
+<p>Another property that our rule system may have, is called «well-foundedness»: It requires that, if we start with any item, say α, and we keep using any applicable exchange rules in the forward direction, we must eventually get some item β, that can not be exchanged for anything else.</p>
+<p>I.e., in a well-founded rule system no sequence of forward exchanges can go on forever; arguably an essential property if we want to write a computer program, that always gives an answer.</p>
+<p>Now, if our rule system has both the confluence and the well-foundedness property, then not only will <em>every</em> sequence of exchanges eventually end, but for every α we start with, there is exactly one β that it can end with.</p>
+<p>And this is actually easy to see: lets say you started with α, by well-foundedness, after a finite number of forward steps you can’t go any further and end up with β; but maybe if you had used a different sequence of steps, you would have ended up with β’.</p>
+<p>Now confluence tell us there are sequences of further steps, that would give us a γ from both β and β’. But how could we possibly find these sequences?</p>
+<p>Luckily, our rule system is well-founded, meaning no further exchanges of β and β’ are possible, so the two sequences we would need to find are empty, meaning β and β’ (and the putative γ) have to be equal.</p>
+<p>So now we have a recipe for solving our initial question of whether we can get one item from another by repeated forward and backward exchanges (under the assumption that our rule system is confluent and well founded):</p>
+<p>Take both items, keep applying the exchange rules in the forward direction until you can’t go further and you get two items uniquely determined by the starting points; compare them, if they are equal, the answer is yes; otherwise it is no.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>These are the generalities that I wanted to share. The actual hard work is of course in showing that a given rule system actually is well-founded and confluent.</p>
+    </section>
+</article>
+
+        </main>
+
+        <footer>
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+        </footer>
+    </body>
+</html>
