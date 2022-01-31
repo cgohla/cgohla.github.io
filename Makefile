@@ -1,10 +1,13 @@
-
-
-build:
+build: diagrams
 	cabal run site -- build
 
 clean:
-	cabal run site -- clean
+	$(MAKE) -C diagrams clean
+	cabal run site -- clean || true
+	rm *~ || true
 
-watch:
+watch: diagrams
 	cabal run site -- watch
+
+diagrams:
+	$(MAKE) -C diagrams all

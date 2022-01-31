@@ -1,0 +1,33 @@
+\documentclass[preview,convert={outext=.svg,command=\unexpanded{pdf2svg \infile\space\outfile}},multi=false]{standalone}[2012/04/13]
+\usepackage{tikz}
+\usetikzlibrary{arrows, calc}
+\usepackage{amsmath}
+
+\def\Hask{\mathsf{Hask}}
+\def\Id{\mathsf{Id}}
+\def\T{\mathsf{T}}
+\def\id{\mathsf{id}}
+
+\newsavebox\mapleftelem
+\savebox\mapleftelem{
+  \begin{tikzpicture}[node distance=2cm, auto, baseline=(id.base)]
+    \node (S1) {$*$};
+    \node (S2) [below of= S1] {$*$};
+    \draw[->] (S1) to node (id) [left] {$\id$} (S2);
+  \end{tikzpicture}
+}
+
+\newsavebox\maprightelem
+\savebox\maprightelem{
+  \begin{tikzpicture}[node distance=2cm, auto, baseline=(id.base)]
+    \node (S1) {$\T(*)=\Hask$};
+    \node (S2) [below of= S1] {$\T(*)=\Hask$};
+    \draw[->] (S1) to node (id) [right] {$\T=\T(\id)$} (S2);    
+  \end{tikzpicture}
+}
+
+\begin{document}
+\begin{equation*}
+  \usebox\mapleftelem \mapsto \usebox\maprightelem
+\end{equation*}
+\end{document}

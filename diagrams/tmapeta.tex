@@ -1,0 +1,21 @@
+\documentclass[preview,convert={outext=.svg,command=\unexpanded{pdf2svg \infile\space\outfile}},multi=false]{standalone}[2012/04/13]
+\usepackage{tikz}
+\usetikzlibrary{arrows, calc}
+\usepackage{amsmath}
+
+\input{defs.tex}
+
+\newsavebox\maprighteta
+\savebox\maprighteta{
+  \begin{tikzpicture}[node distance=2cm, auto, baseline=(id.base)]
+    \node (S1) {$\Hask$};
+    \node (S2) [below of= S1] {$\Hask$};
+    \draw[->] (S1) to node (id) [right, bend left] {$\T=\T(\id)$} (S2);
+  \end{tikzpicture}
+}
+
+\begin{document}
+\begin{equation*}
+  \usebox\maprighteta
+\end{equation*}
+\end{document}

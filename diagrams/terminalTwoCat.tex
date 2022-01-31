@@ -1,0 +1,34 @@
+\documentclass[preview,convert={outext=.svg,command=\unexpanded{pdf2svg \infile\space\outfile}},multi=false]{standalone}[2012/04/13]
+\usepackage{tikz}
+\usetikzlibrary{arrows, calc}
+\usepackage{amsmath}
+
+\input{defs.tex}
+
+\newsavebox\termimalOneCell
+\savebox\termimalOneCell{
+  \begin{tikzpicture}[node distance=2cm, auto, baseline=(id.base)]
+    \node (S1) {$*$};
+    \node (S2) [below of= S1] {$*$};
+    \draw[->] (S1) to node (id) [right] {$\id_*$} (S2);
+  \end{tikzpicture}
+}
+
+\newsavebox\termimalTwoCell
+\savebox\termimalTwoCell{
+  \begin{tikzpicture}[node distance=2cm, auto, baseline=(id.base)]
+    \node (S1) {$*$};
+    \node (S2) [below of= S1] {$*$};
+    \draw[->] [bend left=1.5cm]  (S1) to node (id1) [right] {$\id_*$} (S2);
+    \draw[->] [bend right=1.5cm] (S1) to node (id2) [left]  {$\id_*$} (S2);
+    \draw[-implies, double] (id2) to node [above] {$\id_{\id_*}$} (id1);
+  \end{tikzpicture}
+}
+
+\begin{document}
+\begin{equation*}
+  \begin{matrix}
+    *\quad, & \usebox\termimalOneCell\quad, & \usebox\termimalTwoCell
+  \end{matrix}
+\end{equation*}
+\end{document}
