@@ -1,0 +1,42 @@
+\documentclass[cropconvert={outext=.svg,command=\unexpanded{pdf2svg \infile\space\outfile}},multi=false]{standalone}[2012/04/13]
+\usepackage{xy}
+\makeatletter
+
+\usepackage{amsmath}
+
+\def\Hask{\mathsf{Hask}}
+\def\Id{\mathsf{Id}}
+\def\T{\mathsf{T}}
+
+  % \begin{tikzcd}
+  %   {} & \Hask & {}\\
+  %   \Hask & {} & \Hask
+  % \end{tikzcd}
+  % \begin{tikzcd}
+  %   \Hask \arrow[r, bend left, "\Id", ""{name=id, below}] \arrow[r, bend right, "\T"', ""{name=t, above}] & \Hask
+  %   \arrow[Rightarrow, from=id, to=t, "\eta"]
+  % \end{tikzcd}
+
+
+% \begin{document}
+% \begin{displaymath}
+%   \begin{tikzpicture}[node distance=2cm, auto]
+%     \node (H1) {$\Hask$};
+%     \node (H2) [right of= H1] {$\Hask$};
+%     \draw[->, bend left] (H1) to node[above] {$\Id_{\Hask}$} (H2);
+%     \draw[->, bend right] (H1) to node[below] {$\T$} (H2);
+%   \end{tikzpicture} =
+%   \begin{tikzpicture}[node distance=2cm, auto]
+%     \node (H1) {$\Hask$};
+%     \node (H2) [right of= H1] {$\Hask$};
+%     \draw[->, bend left] (H1) to node[above] {$\Id_{\Hask}$} (H2);
+%     \draw[->, bend right] (H1) to node[below] {$\T$} (H2);
+%   \end{tikzpicture}
+% \end{displaymath}
+% \end{document}
+
+\begin{document}
+\begin{equation*}
+  \xymatrix{\Hask}
+\end{equation*}
+\end{document}

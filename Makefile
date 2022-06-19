@@ -1,12 +1,12 @@
-
-
-build:
+build: diagrams
 	cabal run site -- build
 
 clean:
-	cabal run site -- clean
+	$(MAKE) -C diagrams clean
+	cabal run site -- clean || true
+	rm *~ || true
 
-watch:
+watch: diagrams
 	cabal run site -- watch
 
 deploy: build
@@ -16,3 +16,5 @@ deploy: build
 	find docs -exec git add \{\} \;
 	git commit -m "add generated files"
 	git push origin main
+diagrams:
+	$(MAKE) -C diagrams all

@@ -1,0 +1,52 @@
+\documentclass[preview,convert={outext=.svg,command=\unexpanded{pdf2svg \infile\space\outfile}},multi=false]{standalone}[2012/04/13]
+\usepackage{tikz}
+\usetikzlibrary{arrows, calc}
+\usepackage{amsmath}
+
+\input{defs.tex}
+
+\newsavebox\hasktleftass
+\savebox\hasktleftass{
+  \begin{tikzpicture}[node distance=2cm, auto, baseline=(m1.base)]
+    \node (H1) {$\Hask$};
+    \node (H2) [above right of= H1] {$\Hask$};
+    \node (H3) [right of= H2] {$\Hask$};
+    \node (H4) [below right of= H3] {$\Hask$};
+    %
+    \draw[->] (H1) to node (t1) [above] {$\T$} (H2);
+    \draw[->] (H2) to node (t2) [above] {$\T$} (H3);
+    \draw[->] (H3) to node (t3) [above] {$\T$} (H4);
+    %
+    \draw[->] (H1) to node (t4) [below] {$\T$} (H3);
+    \draw[->] (H1) to node (t5) [below] {$\T$} (H4);
+    %
+    \draw[->, double, -implies] (H2) to node [right] {$\mu$} (t4);
+    \draw[->, double, -implies] (H3) to node (m1) [right] {$\mu$} (t5);
+  \end{tikzpicture}
+}
+
+\newsavebox\hasktrightass
+\savebox\hasktrightass{
+  \begin{tikzpicture}[node distance=2cm, auto, baseline=(m1.base)]
+    \node (H1) {$\Hask$};
+    \node (H2) [above right of= H1] {$\Hask$};
+    \node (H3) [right of= H2] {$\Hask$};
+    \node (H4) [below right of= H3] {$\Hask$};
+    %
+    \draw[->] (H1) to node (t1) [above] {$\T$} (H2);
+    \draw[->] (H2) to node (t2) [above] {$\T$} (H3);
+    \draw[->] (H3) to node (t3) [above] {$\T$} (H4);
+    %
+    \draw[->] (H2) to node (t4) [below] {$\T$} (H4);
+    \draw[->] (H1) to node (t5) [below] {$\T$} (H4);
+    %
+    \draw[->, double, -implies] (H3) to node [right] {$\mu$} (t4);
+    \draw[->, double, -implies] (H2) to node (m1) [right] {$\mu$, } (t5);
+  \end{tikzpicture}
+}
+
+\begin{document}
+\begin{equation*}
+  \usebox\hasktleftass = \usebox\hasktrightass
+\end{equation*}
+\end{document}

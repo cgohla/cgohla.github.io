@@ -140,3 +140,8 @@ article .header {
     font-size: 1.8rem;
   }
 }
+
+code {
+    font-family: monospace;
+    background-color: lightgray;
+}

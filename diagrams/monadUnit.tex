@@ -1,0 +1,54 @@
+\documentclass[preview,convert={outext=.svg,command=\unexpanded{pdf2svg \infile\space\outfile}},multi=false]{standalone}[2012/04/13]
+\usepackage{tikz}
+\usetikzlibrary{arrows, calc}
+\usepackage{amsmath}
+
+\input{defs.tex}
+
+\newsavebox\monadunitleft
+\savebox\monadunitleft{
+  \begin{tikzpicture}[node distance=2cm, auto, baseline=(mu.base)]
+    \node (H1) {$\Hask$};
+    \node (H2) [above right of= H1] {$\Hask$};
+    \node (H3) [below right of= H2] {$\Hask$};
+    \draw[->, bend left] (H1) to node (i) [above] {$\Id$} (H2);
+    \draw[->, bend right] (H1) to node (t1) [below] {$\T$} (H2);
+    \draw[->] (H2) to node [above] {$\T$} (H3);
+    \draw[->] (H1) to node [below] (t2) {$\T$} (H3);
+    \draw[->, double, -implies] (i) to node [right] {$\eta$} (t1);
+    \draw[->, double, -implies] (H2) to node (mu)  [right] {$\mu$} (t2); % double arrow needs to be shorter. how do we factor that out?
+  \end{tikzpicture}
+}
+
+\newsavebox\monadunitmiddle
+\savebox\monadunitmiddle{
+  \begin{tikzpicture}[node distance=2cm, auto, baseline=(H1.base)]
+    \node (H1) {$\Hask$};
+    \node (H2) [right of= H1] {$\Hask$};
+    \draw[->, bend left] (H1) to node (t0) [above] {$\T$} (H2);
+    \draw[->, bend right] (H1) to node (t1) [below] {$\T$} (H2);
+    \draw[->, double, -implies] (t0) to node [right] {$\id_\T$} (t1);
+  \end{tikzpicture}
+}
+
+
+\newsavebox\monadunitright
+\savebox\monadunitright{
+  \begin{tikzpicture}[node distance=2cm, auto, baseline=(mu.base)]
+    \node (H1) {$\Hask$};
+    \node (H2) [above right of= H1] {$\Hask$};
+    \node (H3) [below right of= H2] {$\Hask$};
+    \draw[->] (H1) to node (t) [below] {$\T$} (H2);
+    \draw[->, bend left] (H2) to node (i) [above] {$\Id$} (H3);
+    \draw[->, bend right] (H2) to node (t1) [below] {$\T$} (H3);
+    \draw[->] (H1) to node [below] (t2) {$\T$} (H3);
+    \draw[->, double, -implies] (i) to node [right] {$\eta$} (t1);
+    \draw[->, double, -implies] (H2) to node (mu) [left] {$\mu$} (t2); % double arrow needs to be shorter. how do we factor that out?
+  \end{tikzpicture}
+}
+
+\begin{document}
+\begin{equation*}
+  \usebox\monadunitleft = \usebox\monadunitmiddle = \usebox\monadunitright
+\end{equation*}
+\end{document}

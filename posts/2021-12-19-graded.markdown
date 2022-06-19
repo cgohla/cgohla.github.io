@@ -1,0 +1,190 @@
+---
+title: Graded Monads
+---
+
+Graded monads are great. In functional programming, for example, they
+can be used to track certain sorts of external state at the type
+level. [^1] [^2]
+
+## Lax Functors and Monads ##
+
+Graded monads generalize ordinary monads, let's see how: An ordinary
+monad can be viewed as a lax 2-functor $1 → CAT$ from the terminal
+2-category $1$ to the 2-category of large categories $CAT$.
+
+The later contains the (idealized) category $Hask$ as an object. And
+it's the only one I'm going to use as an example. But you may also
+think of the category $Set$ of sets and functions, if that's more
+familiar.
+
+Let's note that the terminal 2-category $1$ consists of a
+unique object, its identity arrow, and the later's identity 2-arrow.
+
+![(The terminal 2-category)](../diagrams/terminalTwoCat.svg)
+
+First, any lax 2-functor $T : 1 → CAT$ needs to assign values for the
+unique object $*$ and for its identity (the image of the identity 2-arrow
+is fixed by the choice of the 1-arrow).
+
+Note in particular that $T$ does not need to preserve the identity
+arrow. That's part of what makes it lax.
+
+So we define $T$ by choosing a category as the image of the unique
+object. Let's suppose we chose $Hask$.
+
+![(The action of $T$ on the unique object)](../diagrams/tmapstar.svg)
+
+Now we still get to freely choose an endomorphism of $Hask$, i.e., an
+endofunctor. Let's also call it $T$. So keep in mind there will be two
+$T$s appearing, one a lax 2-functor, the other an endofunctor of
+$Hask$.
+
+![(The action of $T$ in the identity)](../diagrams/tmapid.svg)
+
+We already see some structure emerge: because $T : Hask → Hask$ is an
+endofunctor, we can take its powers: $T^0$, $T$, $T^2$, $T^3$ ... by
+composing $T$ with itself repeatedly.
+
+$T^0$ is of course the identity functor $Id : Hask → Hask$ of $Hask$.
+By contrast, if $T$ were a strict 2-functor, our image $T=T(id)$ would
+have to be the identity functor of $Hask$, and equal to all its
+powers. *Not so here*.
+
+The relationship between the identity functor of $Hask$ and $T : Hask
+→ Hask$ is not completely arbitrary however: the definition of a lax
+2-functor requires us to provide a 2-arrow $Id_{Hask} ⇒ T$, i.e., a
+natural transformation.
+
+![](../diagrams/laxEta.svg)
+	
+In Haskell notation this is a function `eta :: a -> T a` .  As for the
+identity, so for the composition: since $T$ is lax, it is only
+required to preserve composites up to 2-arrow. For our $Hask$
+endofunctor $T$ this means we require a natural transformation $T^2 ⇒
+T$, let's call it $μ$.
+
+![](../diagrams/laxMu.svg)
+
+In Haskell notation this is a `mu :: T(T a) -> T a` .  (The natural
+transformations eta and mu are better known in Haskell as `return` and
+`join` from the `Control.Monad` module)
+
+Continuing with our story: for $(T, η, μ)$ to actually be a monad the
+natural transformations $η$ and $μ$ have to satisfy two axioms usually
+called UNIT and ASSOCIATIVITY[^4]. 
+
+![UNIT](../diagrams/monadUnit.svg)
+
+![ASSOCIATIVITY](../diagrams/monadAssociativity.svg)
+
+Now the big shocking reveal is that the axioms for our lax 2-functor
+$T : 1 → CAT$ look exactly like the monad axioms for $(T : Hask →
+Hask, η, μ)$.
+
+Disregarding the fact that I have not actually given a precise
+definition of lax 2-functors, we now take it as established that there
+is a bijection between such $T : 1 → Hask$ with object value $Hask$
+and monads $T$ on the category $Hask$.
+
+## Graded Monads ##
+
+Now, to obtain the concept of a graded monad we need to replace the
+terminal 2-category $1$ in the story above with something else. That
+something else is going to be a monoid. Let me explain what I mean by
+that.
+
+Monoids, i.e., sets with an associative and unital operation can be
+viewed as categories: introduce an object, let's call it $*$, and let
+the morphisms $* → *$ be the elements of the monoid. Then the monoid
+operation is a composition operation for this category and the monoid
+unit is the identity morphism of the single object $*$.
+
+(The object $*$ is not to be confused with the `Type` kind in
+Haskell.)
+
+So a monoid in a way *is* a category. But we really needed to replace
+the terminal 2-category $1$ with another 2-category, since we want to
+talk about lax 2-functors out of it. This is easily fixed: just add in
+an identity 2-arrow for each 1-arrow.
+
+Thus, in the same vein, a monoid in a way *is* a 2-category, and this
+shifting of viewpoint does not require supplying any new data, but
+merely the use of a more powerful language to talk about the same
+thing.
+
+## Example ##
+
+As an example, let's consider the monoid with elements $0$ and $1$ and
+the usual multiplication as the operation. Then clearly $1$ is the
+unit. As a category it has arrows $0 : * → *$ and $1 : * → *$ and
+composition is just multiplication, as we have said. Let's call this
+category $B$.
+
+We view $B$ as a 2-category, and consider what it means to have a lax
+2-functor $T : B → CAT$. $T(*)$ is some category, for concreteness, we
+can continue to assume that's $Hask$. Since $B$ has 2 distinct arrows
+we get two $Hask$ endo functors $T_0$ and $T_1 : Hask → Hask$.
+
+Note that $T_1$ is the image of the identity $1 : * → *$ under the lax
+2-functor, so laxness means there must be a natural transformation
+$η : Id_{Hask} ⇒ T_1$.
+
+Also by laxness of $T$, as part of its data, there are natural
+transformations $μ : T_i T_j ⇒ T_k$ where $i$ and $j$ can be $0$ or
+$1$ and $k$ is $i×j$. (Note that these are 4 different $μ$'s, but
+I don't want to clutter the notation with indices.)
+
+In Haskell notation we might write these natural transformations as
+`eta :: a -> T One a` and `mu :: T i (T j a) -> T (Mult i j) a` . (Note
+that the first type parameter of `T` is of a data kind with
+constructors `Zero` and `One`, `Mult` is a type family implementing
+multiplication for them.)
+
+The natural transformations need to satisfy unit and associativity
+laws. These can be obtained from the diagrams I included earlier, by
+inserting indices $i$, $j$ and $i×j$ in the right places.
+
+## Generalization ##
+
+Now, to see that graded monads generalize monads we only need to
+consider the fact that the trivial monoid having a single element
+gives exactly the terminal category when promoted to a 2-category in
+the way I described.
+
+Furthermore, homomorphisms of monoids, i.e., maps preserving monoid
+unit and composition, can be promoted to strict 2-functors in an
+obvious way. In particular, for an arbitrary monoid $M$ there is always a
+unique homomorphism $e: 1 → M$ picking out the unit.
+
+If we write the homomorphism e promoted to a strict 2-functor as $E$,
+and if we have a lax 2-functor $T : M → CAT$ then by composing these
+$T E : 1 → CAT$, we obtain an ordinary monad contained in the graded
+monad given by $T$.
+
+## End ##
+
+ There is a type class interface for graded monads implemented in
+[effect-monad](https://hackage.haskell.org/package/effect-monad) by
+[Dominic Orchard](https://twitter.com/dorchard) . Using the
+[`RebindableSyntax`](https://downloads.haskell.org/ghc/latest/docs/html/users_guide/exts/rebindable_syntax.html?highlight=rebindable#extension-RebindableSyntax)
+extension of GHC or the upcoming
+[`QualifiedDo`](https://downloads.haskell.org/ghc/latest/docs/html/users_guide/exts/qualified_do.html#extension-QualifiedDo)
+extension we can even write `do`-blocks that use graded monads.
+
+To my knowledge, the primordial source for lax 2-functors is
+[Introduction to
+bicategories](https://link.springer.com/chapter/10.1007/BFb0074299) by
+Jean Bénabou. Although he calls them simply *morphisms* of
+bicategories. The example section shows how versatile the notion is.
+In particular, he describes «polyads», these are also known today as
+indexed monads. I might write about them some other time.
+
+[^1]: This post is based in a Twitter
+    [thread](https://twitter.com/6d03/status/1472637883685163009).
+
+[^2]: Thanks to contributors on
+    [stackexchange](https://tex.stackexchange.com/questions/629149/how-do-i-put-math-mode-inside-a-tikz-picture-inside-math-mode)
+    for help with typesetting the diagrams.
+
+[^4]: We could also have presented these axioms as [diagrams inside a
+    category](https://en.m.wikipedia.org/wiki/Monad_(category_theory)).
