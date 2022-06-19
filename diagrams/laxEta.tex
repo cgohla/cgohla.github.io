@@ -5,6 +5,10 @@
 
 \input{defs.tex}
 
+%% we want a path that gives a double arrow of fixed length
+%% strategy: go to the midpoint, go forwards, and backwards by a fixed distance
+\def\2cell{}
+
 \begin{document}
 \begin{tikzpicture}[node distance=2cm, auto]
   \node (H1) {$\Hask$};
