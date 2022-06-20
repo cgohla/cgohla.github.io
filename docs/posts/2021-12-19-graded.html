@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Graded Monads</title>
+        <link rel="stylesheet" href="../css/default.css" />
+    </head>
+    <body>
+        <header>
+            <div class="logo">
+                <a href="../">Björn Gohla</a>
+            </div>
+            <nav>
+                <a href="../">Home</a>
+                <a href="../about.html">About</a>
+                <a href="../contact.html">Contact</a>
+                <a href="../archive.html">Archive</a>
+            </nav>
+        </header>
+
+        <main role="main">
+            <h1>Graded Monads</h1>
+            <article>
+    <section class="header">
+        Posted on December 19, 2021
+        
+    </section>
+    <section>
+        <p>Graded monads are great. In functional programming, for example, they
+can be used to track certain sorts of external state at the type
+level. <a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<h2 id="lax-functors-and-monads">Lax Functors and Monads</h2>
+<p>Graded monads generalize ordinary monads, let’s see how: An ordinary
+monad can be viewed as a lax 2-functor <span class="math inline">1 → <em>C</em><em>A</em><em>T</em></span> from the terminal
+2-category <span class="math inline">1</span> to the 2-category of large categories <span class="math inline"><em>C</em><em>A</em><em>T</em></span>.</p>
+<p>The later contains the (idealized) category <span class="math inline"><em>H</em><em>a</em><em>s</em><em>k</em></span> as an object. And
+it’s the only one I’m going to use as an example. But you may also
+think of the category <span class="math inline"><em>S</em><em>e</em><em>t</em></span> of sets and functions, if that’s more
+familiar.</p>
+<p>Let’s note that the terminal 2-category <span class="math inline">1</span> consists of a
+unique object, its identity arrow, and the later’s identity 2-arrow.</p>
+<figure>
+<img src="../diagrams/terminalTwoCat.svg" alt="(The terminal 2-category)" />
+<figcaption aria-hidden="true">(The terminal 2-category)</figcaption>
+</figure>
+<p>First, any lax 2-functor <span class="math inline"><em>T</em> : 1 → <em>C</em><em>A</em><em>T</em></span> needs to assign values for the
+unique object <span class="math inline">*</span> and for its identity (the image of the identity 2-arrow
+is fixed by the choice of the 1-arrow).</p>
+<p>Note in particular that <span class="math inline"><em>T</em></span> does not need to preserve the identity
+arrow. That’s part of what makes it lax.</p>
+<p>So we define <span class="math inline"><em>T</em></span> by choosing a category as the image of the unique
+object. Let’s suppose we chose <span class="math inline"><em>H</em><em>a</em><em>s</em><em>k</em></span>.</p>
+<figure>
+<img src="../diagrams/tmapstar.svg" alt="(The action of T on the unique object)" />
+<figcaption aria-hidden="true">(The action of <span class="math inline"><em>T</em></span> on the unique object)</figcaption>
+</figure>
+<p>Now we still get to freely choose an endomorphism of <span class="math inline"><em>H</em><em>a</em><em>s</em><em>k</em></span>, i.e., an
+endofunctor. Let’s also call it <span class="math inline"><em>T</em></span>. So keep in mind there will be two
+<span class="math inline"><em>T</em></span>s appearing, one a lax 2-functor, the other an endofunctor of
+<span class="math inline"><em>H</em><em>a</em><em>s</em><em>k</em></span>.</p>
+<figure>
+<img src="../diagrams/tmapid.svg" alt="(The action of T in the identity)" />
+<figcaption aria-hidden="true">(The action of <span class="math inline"><em>T</em></span> in the identity)</figcaption>
+</figure>
+<p>We already see some structure emerge: because <span class="math inline"><em>T</em> : <em>H</em><em>a</em><em>s</em><em>k</em> → <em>H</em><em>a</em><em>s</em><em>k</em></span> is an
+endofunctor, we can take its powers: <span class="math inline"><em>T</em><sup>0</sup></span>, <span class="math inline"><em>T</em></span>, <span class="math inline"><em>T</em><sup>2</sup></span>, <span class="math inline"><em>T</em><sup>3</sup></span> … by
+composing <span class="math inline"><em>T</em></span> with itself repeatedly.</p>
+<p><span class="math inline"><em>T</em><sup>0</sup></span> is of course the identity functor <span class="math inline"><em>I</em><em>d</em> : <em>H</em><em>a</em><em>s</em><em>k</em> → <em>H</em><em>a</em><em>s</em><em>k</em></span> of <span class="math inline"><em>H</em><em>a</em><em>s</em><em>k</em></span>.
+By contrast, if <span class="math inline"><em>T</em></span> were a strict 2-functor, our image <span class="math inline"><em>T</em> = <em>T</em>(<em>i</em><em>d</em>)</span> would
+have to be the identity functor of <span class="math inline"><em>H</em><em>a</em><em>s</em><em>k</em></span>, and equal to all its
+powers. <em>Not so here</em>.</p>
+<p>The relationship between the identity functor of <span class="math inline"><em>H</em><em>a</em><em>s</em><em>k</em></span> and <span class="math inline"><em>T</em> : <em>H</em><em>a</em><em>s</em><em>k</em> → <em>H</em><em>a</em><em>s</em><em>k</em></span> is not completely arbitrary however: the definition of a lax
+2-functor requires us to provide a 2-arrow <span class="math inline"><em>I</em><em>d</em><sub><em>H</em><em>a</em><em>s</em><em>k</em></sub> ⇒ <em>T</em></span>, i.e., a
+natural transformation.</p>
+<p><img src="../diagrams/laxEta.svg" /></p>
+<p>In Haskell notation this is a function <code>eta :: a -&gt; T a</code> . As for the
+identity, so for the composition: since <span class="math inline"><em>T</em></span> is lax, it is only
+required to preserve composites up to 2-arrow. For our <span class="math inline"><em>H</em><em>a</em><em>s</em><em>k</em></span>
+endofunctor <span class="math inline"><em>T</em></span> this means we require a natural transformation <span class="math inline"><em>T</em><sup>2</sup> ⇒ <em>T</em></span>, let’s call it <span class="math inline"><em>μ</em></span>.</p>
+<p><img src="../diagrams/laxMu.svg" /></p>
+<p>In Haskell notation this is a <code>mu :: T(T a) -&gt; T a</code> . (The natural
+transformations eta and mu are better known in Haskell as <code>return</code> and
+<code>join</code> from the <code>Control.Monad</code> module)</p>
+<p>Continuing with our story: for <span class="math inline">(<em>T</em>,<em>η</em>,<em>μ</em>)</span> to actually be a monad the
+natural transformations <span class="math inline"><em>η</em></span> and <span class="math inline"><em>μ</em></span> have to satisfy two axioms usually
+called UNIT and ASSOCIATIVITY<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>.</p>
+<figure>
+<img src="../diagrams/monadUnit.svg" alt="UNIT" />
+<figcaption aria-hidden="true">UNIT</figcaption>
+</figure>
+<figure>
+<img src="../diagrams/monadAssociativity.svg" alt="ASSOCIATIVITY" />
+<figcaption aria-hidden="true">ASSOCIATIVITY</figcaption>
+</figure>
+<p>Now the big shocking reveal is that the axioms for our lax 2-functor
+<span class="math inline"><em>T</em> : 1 → <em>C</em><em>A</em><em>T</em></span> look exactly like the monad axioms for <span class="math inline">(<em>T</em>:<em>H</em><em>a</em><em>s</em><em>k</em>→<em>H</em><em>a</em><em>s</em><em>k</em>,<em>η</em>,<em>μ</em>)</span>.</p>
+<p>Disregarding the fact that I have not actually given a precise
+definition of lax 2-functors, we now take it as established that there
+is a bijection between such <span class="math inline"><em>T</em> : 1 → <em>H</em><em>a</em><em>s</em><em>k</em></span> with object value <span class="math inline"><em>H</em><em>a</em><em>s</em><em>k</em></span>
+and monads <span class="math inline"><em>T</em></span> on the category <span class="math inline"><em>H</em><em>a</em><em>s</em><em>k</em></span>.</p>
+<h2 id="graded-monads">Graded Monads</h2>
+<p>Now, to obtain the concept of a graded monad we need to replace the
+terminal 2-category <span class="math inline">1</span> in the story above with something else. That
+something else is going to be a monoid. Let me explain what I mean by
+that.</p>
+<p>Monoids, i.e., sets with an associative and unital operation can be
+viewed as categories: introduce an object, let’s call it <span class="math inline">*</span>, and let
+the morphisms <span class="math inline"> *  → *</span> be the elements of the monoid. Then the monoid
+operation is a composition operation for this category and the monoid
+unit is the identity morphism of the single object <span class="math inline">*</span>.</p>
+<p>(The object <span class="math inline">*</span> is not to be confused with the <code>Type</code> kind in
+Haskell.)</p>
+<p>So a monoid in a way <em>is</em> a category. But we really needed to replace
+the terminal 2-category <span class="math inline">1</span> with another 2-category, since we want to
+talk about lax 2-functors out of it. This is easily fixed: just add in
+an identity 2-arrow for each 1-arrow.</p>
+<p>Thus, in the same vein, a monoid in a way <em>is</em> a 2-category, and this
+shifting of viewpoint does not require supplying any new data, but
+merely the use of a more powerful language to talk about the same
+thing.</p>
+<h2 id="example">Example</h2>
+<p>As an example, let’s consider the monoid with elements <span class="math inline">0</span> and <span class="math inline">1</span> and
+the usual multiplication as the operation. Then clearly <span class="math inline">1</span> is the
+unit. As a category it has arrows <span class="math inline">0 :  *  → *</span> and <span class="math inline">1 :  *  → *</span> and
+composition is just multiplication, as we have said. Let’s call this
+category <span class="math inline"><em>B</em></span>.</p>
+<p>We view <span class="math inline"><em>B</em></span> as a 2-category, and consider what it means to have a lax
+2-functor <span class="math inline"><em>T</em> : <em>B</em> → <em>C</em><em>A</em><em>T</em></span>. <span class="math inline"><em>T</em>(*)</span> is some category, for concreteness, we
+can continue to assume that’s <span class="math inline"><em>H</em><em>a</em><em>s</em><em>k</em></span>. Since <span class="math inline"><em>B</em></span> has 2 distinct arrows
+we get two <span class="math inline"><em>H</em><em>a</em><em>s</em><em>k</em></span> endo functors <span class="math inline"><em>T</em><sub>0</sub></span> and <span class="math inline"><em>T</em><sub>1</sub> : <em>H</em><em>a</em><em>s</em><em>k</em> → <em>H</em><em>a</em><em>s</em><em>k</em></span>.</p>
+<p>Note that <span class="math inline"><em>T</em><sub>1</sub></span> is the image of the identity <span class="math inline">1 :  *  → *</span> under the lax
+2-functor, so laxness means there must be a natural transformation
+<span class="math inline"><em>η</em> : <em>I</em><em>d</em><sub><em>H</em><em>a</em><em>s</em><em>k</em></sub> ⇒ <em>T</em><sub>1</sub></span>.</p>
+<p>Also by laxness of <span class="math inline"><em>T</em></span>, as part of its data, there are natural
+transformations <span class="math inline"><em>μ</em> : <em>T</em><sub><em>i</em></sub><em>T</em><sub><em>j</em></sub> ⇒ <em>T</em><sub><em>k</em></sub></span> where <span class="math inline"><em>i</em></span> and <span class="math inline"><em>j</em></span> can be <span class="math inline">0</span> or
+<span class="math inline">1</span> and <span class="math inline"><em>k</em></span> is <span class="math inline"><em>i</em> × <em>j</em></span>. (Note that these are 4 different <span class="math inline"><em>μ</em></span>’s, but
+I don’t want to clutter the notation with indices.)</p>
+<p>In Haskell notation we might write these natural transformations as
+<code>eta :: a -&gt; T One a</code> and <code>mu :: T i (T j a) -&gt; T (Mult i j) a</code> . (Note
+that the first type parameter of <code>T</code> is of a data kind with
+constructors <code>Zero</code> and <code>One</code>, <code>Mult</code> is a type family implementing
+multiplication for them.)</p>
+<p>The natural transformations need to satisfy unit and associativity
+laws. These can be obtained from the diagrams I included earlier, by
+inserting indices <span class="math inline"><em>i</em></span>, <span class="math inline"><em>j</em></span> and <span class="math inline"><em>i</em> × <em>j</em></span> in the right places.</p>
+<h2 id="generalization">Generalization</h2>
+<p>Now, to see that graded monads generalize monads we only need to
+consider the fact that the trivial monoid having a single element
+gives exactly the terminal category when promoted to a 2-category in
+the way I described.</p>
+<p>Furthermore, homomorphisms of monoids, i.e., maps preserving monoid
+unit and composition, can be promoted to strict 2-functors in an
+obvious way. In particular, for an arbitrary monoid <span class="math inline"><em>M</em></span> there is always a
+unique homomorphism <span class="math inline"><em>e</em> : 1 → <em>M</em></span> picking out the unit.</p>
+<p>If we write the homomorphism e promoted to a strict 2-functor as <span class="math inline"><em>E</em></span>,
+and if we have a lax 2-functor <span class="math inline"><em>T</em> : <em>M</em> → <em>C</em><em>A</em><em>T</em></span> then by composing these
+<span class="math inline"><em>T</em><em>E</em> : 1 → <em>C</em><em>A</em><em>T</em></span>, we obtain an ordinary monad contained in the graded
+monad given by <span class="math inline"><em>T</em></span>.</p>
+<h2 id="end">End</h2>
+<p>There is a type class interface for graded monads implemented in
+<a href="https://hackage.haskell.org/package/effect-monad">effect-monad</a> by
+<a href="https://twitter.com/dorchard">Dominic Orchard</a> . Using the
+<a href="https://downloads.haskell.org/ghc/latest/docs/html/users_guide/exts/rebindable_syntax.html?highlight=rebindable#extension-RebindableSyntax"><code>RebindableSyntax</code></a>
+extension of GHC or the upcoming
+<a href="https://downloads.haskell.org/ghc/latest/docs/html/users_guide/exts/qualified_do.html#extension-QualifiedDo"><code>QualifiedDo</code></a>
+extension we can even write <code>do</code>-blocks that use graded monads.</p>
+<p>To my knowledge, the primordial source for lax 2-functors is
+<a href="https://link.springer.com/chapter/10.1007/BFb0074299">Introduction to
+bicategories</a> by
+Jean Bénabou. Although he calls them simply <em>morphisms</em> of
+bicategories. The example section shows how versatile the notion is.
+In particular, he describes «polyads», these are also known today as
+indexed monads. I might write about them some other time.</p>
+<h2 id="acknowledgements">Acknowledgements</h2>
+<p>Thanks to contributors on
+<a href="https://tex.stackexchange.com/questions/629149/how-do-i-put-math-mode-inside-a-tikz-picture-inside-math-mode">stackexchange</a>
+for help with typesetting the diagrams.</p>
+<section class="footnotes footnotes-end-of-document" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>This post is based in a Twitter
+<a href="https://twitter.com/6d03/status/1472637883685163009">thread</a>.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2" role="doc-endnote"><p>We could also have presented these axioms as <a href="https://en.m.wikipedia.org/wiki/Monad_(category_theory)">diagrams inside a
+category</a>.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+    </section>
+</article>
+
+        </main>
+
+        <footer>
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+        </footer>
+    </body>
+</html>
