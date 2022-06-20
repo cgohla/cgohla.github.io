@@ -4,7 +4,7 @@ title: Graded Monads
 
 Graded monads are great. In functional programming, for example, they
 can be used to track certain sorts of external state at the type
-level. [^1] [^2]
+level.  [^1] 
 
 ## Lax Functors and Monads ##
 
@@ -179,12 +179,14 @@ bicategories. The example section shows how versatile the notion is.
 In particular, he describes «polyads», these are also known today as
 indexed monads. I might write about them some other time.
 
-[^1]: This post is based in a Twitter
-    [thread](https://twitter.com/6d03/status/1472637883685163009).
+## Acknowledgements ##
 
-[^2]: Thanks to contributors on
+Thanks to contributors on
     [stackexchange](https://tex.stackexchange.com/questions/629149/how-do-i-put-math-mode-inside-a-tikz-picture-inside-math-mode)
     for help with typesetting the diagrams.
+
+[^1]: This post is based in a Twitter
+    [thread](https://twitter.com/6d03/status/1472637883685163009).
 
 [^4]: We could also have presented these axioms as [diagrams inside a
     category](https://en.m.wikipedia.org/wiki/Monad_(category_theory)).
