@@ -179,6 +179,9 @@ bicategories. The example section shows how versatile the notion is.
 In particular, he describes «polyads», these are also known today as
 indexed monads. I might write about them some other time.
 
+I have used graded monads to implement tracking of kernel API
+[capabilities in Haskell programs](https://githiub.com/cgohla/pledge).
+
 ## Acknowledgements ##
 
 Thanks to contributors on
