@@ -17,6 +17,7 @@
                 <a href="../about.html">About</a>
                 <a href="../contact.html">Contact</a>
                 <a href="../archive.html">Archive</a>
+                <a href="../hireme.html">Hire Me</a>
             </nav>
         </header>
 
@@ -30,7 +31,7 @@
     <section>
         <p>Graded monads are great. In functional programming, for example, they
 can be used to track certain sorts of external state at the type
-level. <a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> <a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a></p>
+level. <a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
 <h2 id="lax-functors-and-monads">Lax Functors and Monads</h2>
 <p>Graded monads generalize ordinary monads, let’s see how: An ordinary
 monad can be viewed as a lax 2-functor <span class="math inline">1 → <em>C</em><em>A</em><em>T</em></span> from the terminal
@@ -85,7 +86,7 @@ transformations eta and mu are better known in Haskell as <code>return</code> an
 <code>join</code> from the <code>Control.Monad</code> module)</p>
 <p>Continuing with our story: for <span class="math inline">(<em>T</em>,<em>η</em>,<em>μ</em>)</span> to actually be a monad the
 natural transformations <span class="math inline"><em>η</em></span> and <span class="math inline"><em>μ</em></span> have to satisfy two axioms usually
-called UNIT and ASSOCIATIVITY<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>.</p>
+called UNIT and ASSOCIATIVITY<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>.</p>
 <figure>
 <img src="../diagrams/monadUnit.svg" alt="UNIT" />
 <figcaption aria-hidden="true">UNIT</figcaption>
@@ -173,16 +174,19 @@ Jean Bénabou. Although he calls them simply <em>morphisms</em> of
 bicategories. The example section shows how versatile the notion is.
 In particular, he describes «polyads», these are also known today as
 indexed monads. I might write about them some other time.</p>
+<p>I have used graded monads to implement tracking of kernel API
+<a href="https://github.com/cgohla/pledge">capabilities in Haskell programs</a>.</p>
+<h2 id="acknowledgements">Acknowledgements</h2>
+<p>Thanks to contributors on
+<a href="https://tex.stackexchange.com/questions/629149/how-do-i-put-math-mode-inside-a-tikz-picture-inside-math-mode">stackexchange</a>
+for help with typesetting the diagrams.</p>
 <section class="footnotes footnotes-end-of-document" role="doc-endnotes">
 <hr />
 <ol>
 <li id="fn1" role="doc-endnote"><p>This post is based in a Twitter
 <a href="https://twitter.com/6d03/status/1472637883685163009">thread</a>.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn2" role="doc-endnote"><p>Thanks to contributors on
-<a href="https://tex.stackexchange.com/questions/629149/how-do-i-put-math-mode-inside-a-tikz-picture-inside-math-mode">stackexchange</a>
-for help with typesetting the diagrams.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn3" role="doc-endnote"><p>We could also have presented these axioms as <a href="https://en.m.wikipedia.org/wiki/Monad_(category_theory)">diagrams inside a
-category</a>.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2" role="doc-endnote"><p>We could also have presented these axioms as <a href="https://en.m.wikipedia.org/wiki/Monad_(category_theory)">diagrams inside a
+category</a>.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
     </section>
