@@ -1,0 +1,126 @@
+Consider the following AST type for a simple epxression language with
+booleans and natural numbers.
+
+#+begin_src haskell :tangle yes
+  import Numeric.Natural
+  
+  type Nat = Natural
+
+  data Expr = LitNat Nat
+	    | LitBool Bool
+	    | AddNat Expr Expr
+	    | Ite Expr Expr Expr
+	    | EqNat Expr Expr
+	    | AndBool Expr Expr
+	    deriving (Show, Eq)
+#+end_src
+
+This is not very useful as a programming language, but it serves to
+illustrate the point. This could be an expression in concrete syntax:
+#+begin_src
+if 1 == 3 then
+  4 + 5
+else
+  7
+#+end_src
+
+We really only care about abstract expressions here, so I am not going
+to to make the syntax any more precise. The concrete code is taken to
+illustrate the following 'Expr' value
+#+begin_src haskell :tangle yes
+  e :: Expr
+  e = Ite (EqNat (LitNat 1) (LitNat 3))
+      (AddNat (LitNat 4) (LitNat 5))
+      (LitNat 7)
+#+end_src
+
+Now we want define an interpreter for this language, but first we have
+to think about what type the result of evaluation should have in our
+meta language, i.e, Haskell in this case: In our object language an
+expression can stand for an natural numbaer or a boolean (We have not
+yet given formal typing rules); so to accomodate that, we define
+#+begin_src haskell :tangle yes
+  data Val = ValNat Nat
+	   | ValBool Bool
+	   deriving (Show, Eq)
+#+end_src
+
+So naively we might think that evaluation should be a function
+#+begin_src haskell
+  eval :: Expr -> Val
+#+end_src
+But we might be trying to evaluate an expression like
+#+begin_src
+2 == True
+#+end_src
+i.e.
+#+begin_src haskell
+EqNat (LitNat 2) (LitBool True) 
+#+end_src
+which is a legitimate value in our AST type 'Expr', but we can not
+give a reasonable value to it, because it is ill typed in out object
+language. The problem is of course that as it is, we have not encoded
+this typing constraint in the metalanguage. So really our interpreter
+has to be partial.
+#+begin_src haskell :tangle yes
+  eval :: Expr -> Maybe Val
+  eval (LitNat n) = Just $ ValNat n
+  eval (LitBool b) = Just $ ValBool b
+  eval (AddNat e e') = case sequenceA [eval e, eval e'] of
+    Just [ValNat n, ValNat n'] -> Just $ ValNat $ n + n'
+    _ -> Nothing
+  eval (Ite e e' e'') = case sequenceA [eval e, eval e', eval e''] of
+    Just [ValBool b, ValNat n, ValNat n'] -> Just $ ValNat $ if b then n else n'
+    Just [ValBool b, ValBool c, ValBool c'] -> Just $ ValBool $ if b then c else c'
+    _ -> Nothing
+  eval (EqNat e e') = case sequenceA [eval e, eval e'] of
+    Just [ValNat n, ValNat n'] -> Just $ ValBool $ n == n'
+    _ -> Nothing
+  eval (AndBool e e') = case sequenceA [eval e, eval e'] of
+    Just [ValBool b, ValBool b'] -> Just $ ValBool $ b && b'
+    _ -> Nothing
+#+end_src
+
+This is fine and will work of course, but we had to entangle type
+checking and evaluation in the same function.
+
+We could easily define a predicate that tells us if an expression is
+well typed.. But that would not help in removing type checking from
+the evalutation function, since we would still have to return
+'Nothing' whenever we find an ill-typed subexpression. So we need a
+new 'Expr' type that can only contain well typed expressions, so we
+can write an evaluation function that is total.
+
+First, we need to define a data type that for our type information
+#+begin_src haskell :tangle yes
+  data ITType = NatType
+	      | BoolType
+#+end_src
+
+Using the 'Datakind' and 'GADTs' extension, we can use this to
+parametrize our expression type:
+#+begin_src haskell :tangle yes
+  {-# LANGUAGE GADTs #-}
+  {-# LANGUAGE DataKinds #-}
+
+  data ITExpr (t :: ITType) where
+    ITLitNat :: Nat -> ITExpr NatType
+    ITLitBool :: Bool -> ITExpr BoolType
+    ITAddNat :: ITExpr NatType ->  ITExpr NatType -> ITExpr NatType
+    ITIte ::  ITExpr BoolType -> ITExpr t ->  ITExpr t -> ITExpr t
+    ITEqNat :: ITExpr NatType ->  ITExpr NatType -> ITExpr BoolType
+    ITAndBool :: ITExpr BoolType -> ITExpr BoolType -> ITExpr BoolType
+#+end_src
+
+Now we can write a typechecker, which is partial, and a total
+interpreter, that only takes in well-typed expressions... so we don't
+need to the fallthrough clauses in 'eval' anymore
+
+Before writing the evaluator, let's think about its type. We want to
+feed in an intrinsically typed expression
+
+#+begin_src haskell
+  itEval :: Expr a -> ITVal a
+  itEval (ITLitNat n) = 
+#+end_src
+
