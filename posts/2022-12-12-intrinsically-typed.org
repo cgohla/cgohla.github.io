@@ -1,7 +1,15 @@
 Consider the following AST type for a simple epxression language with
 booleans and natural numbers.
 
-#+begin_src haskell :tangle yes
+We will need these language extensions
+#+begin_src haskell :session yes :tangle yes 
+  {-# LANGUAGE GADTs #-}
+  {-# LANGUAGE DataKinds #-}
+  {-# LANGUAGE TypeFamilies #-}
+#+end_src
+
+
+#+begin_src haskell :tangle yes :session yes
   import Numeric.Natural
   
   type Nat = Natural
@@ -27,7 +35,7 @@ else
 We really only care about abstract expressions here, so I am not going
 to to make the syntax any more precise. The concrete code is taken to
 illustrate the following 'Expr' value
-#+begin_src haskell :tangle yes
+#+begin_src haskell :tangle yes :session yes
   e :: Expr
   e = Ite (EqNat (LitNat 1) (LitNat 3))
       (AddNat (LitNat 4) (LitNat 5))
@@ -39,7 +47,7 @@ to think about what type the result of evaluation should have in our
 meta language, i.e, Haskell in this case: In our object language an
 expression can stand for an natural numbaer or a boolean (We have not
 yet given formal typing rules); so to accomodate that, we define
-#+begin_src haskell :tangle yes
+#+begin_src haskell :tangle yes :session yes
   data Val = ValNat Nat
 	   | ValBool Bool
 	   deriving (Show, Eq)
@@ -62,7 +70,7 @@ give a reasonable value to it, because it is ill typed in out object
 language. The problem is of course that as it is, we have not encoded
 this typing constraint in the metalanguage. So really our interpreter
 has to be partial.
-#+begin_src haskell :tangle yes
+#+begin_src haskell :tangle yes :session yes
   eval :: Expr -> Maybe Val
   eval (LitNat n) = Just $ ValNat n
   eval (LitBool b) = Just $ ValBool b
@@ -92,17 +100,14 @@ new 'Expr' type that can only contain well typed expressions, so we
 can write an evaluation function that is total.
 
 First, we need to define a data type that for our type information
-#+begin_src haskell :tangle yes
+#+begin_src haskell :tangle yes :session yes
   data ITType = NatType
 	      | BoolType
 #+end_src
 
 Using the 'Datakind' and 'GADTs' extension, we can use this to
 parametrize our expression type:
-#+begin_src haskell :tangle yes
-  {-# LANGUAGE GADTs #-}
-  {-# LANGUAGE DataKinds #-}
-
+#+begin_src haskell :tangle yes :session yes
   data ITExpr (t :: ITType) where
     ITLitNat :: Nat -> ITExpr NatType
     ITLitBool :: Bool -> ITExpr BoolType
@@ -117,10 +122,36 @@ interpreter, that only takes in well-typed expressions... so we don't
 need to the fallthrough clauses in 'eval' anymore
 
 Before writing the evaluator, let's think about its type. We want to
-feed in an intrinsically typed expression
+feed in an intrinsically typed expression of type 'ITExpr a' for some
+'a :: ITType'. The later models the (very simple) type universe of our
+object language. The result of evaluation however is supposed to be a
+value in the metalanguage. We first relate the types of our object
+language to Haskell types using a type family:
 
-#+begin_src haskell
-  itEval :: Expr a -> ITVal a
-  itEval (ITLitNat n) = 
+#+begin_src haskell :session yes :tangle yes 
+  type family ValType (t :: ITType) :: *
+  type instance ValType 'NatType = Nat
+  type instance ValType 'BoolType = Bool
 #+end_src
 
+Since our expressions are now intrinsically typed, our evalutor has a
+type signature, that expresses the fact that natural number typed
+expressions in our object language evaluates to natural numbers in
+Haskell, and likewise for Booleans.
+
+#+begin_src haskell :session yes :tangle yes 
+  itEval :: ITExpr a -> ValType a
+  itEval (ITLitNat n) = n
+  itEval (ITLitBool b) = b
+  itEval (ITAddNat e e') = (itEval e) + (itEval e')
+  itEval (ITIte e e' e'') = if (itEval e) then (itEval e') else (itEval e'')
+  itEval (ITEqNat e e') = (itEval e) == (itEval e')
+  itEval (ITAndBool e e') = (itEval e) && (itEval e')
+#+end_src
+
+#+begin_src haskell :tangle yes :session yes
+  e' :: ITExpr NatType
+  e' = ITIte (ITEqNat (ITLitNat 1) (ITLitNat 3))
+       (ITAddNat (ITLitNat 4) (ITLitNat 5))
+       (ITLitNat 7)
+#+end_src
