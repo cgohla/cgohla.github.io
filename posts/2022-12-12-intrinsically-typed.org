@@ -14,7 +14,6 @@ We will need these language extensions
   {-# LANGUAGE TypeFamilies #-}
 #+end_src
 
-
 #+begin_src haskell :tangle yes :session yes
   import Numeric.Natural
 
@@ -48,6 +47,23 @@ meant to correspond to the following 'Expr' value
       (AddNat (LitNat 4) (LitNat 5))
       (LitNat 7)
 #+end_src
+
+We want our language to obey the follow (very reasonable) typing rules
+
+: n : Nat    m : Nat
+: ------------------
+:    n + m : Nat
+
+
+: b : Bool    c : Bool
+: --------------------
+:   b && c : Bool
+
+
+
+# ----- ?????
+# n : Nat
+
 
 Now we want define an interpreter for this language, but first we have
 to think about what type the result of evaluation should have in our
