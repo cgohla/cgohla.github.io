@@ -97,24 +97,24 @@ has to be partial.
   eval (LitNat n) = Just $ ValNat n
   eval (LitBool b) = Just $ ValBool b
 
-  eval (AddNat e e') = case sequenceA [eval e, eval e'] of
+  eval (AddNat e e') = case traverse eval [e, e'] of
     Just [ValNat n, ValNat n']
       -> Just $ ValNat $ n + n'
     _ -> Nothing
 
-  eval (Ite e e' e'') = case sequenceA [eval e, eval e', eval e''] of
+  eval (Ite e e' e'') = case traverse eval [e, e', e''] of
     Just [ValBool b, ValNat n, ValNat n']
       -> Just $ ValNat $ if b then n else n'
     Just [ValBool b, ValBool c, ValBool c']
       -> Just $ ValBool $ if b then c else c'
     _ -> Nothing
 
-  eval (EqNat e e') = case sequenceA [eval e, eval e'] of
+  eval (EqNat e e') = case traverse eval [e, e'] of
     Just [ValNat n, ValNat n']
       -> Just $ ValBool $ n == n'
     _ -> Nothing
 
-  eval (AndBool e e') = case sequenceA [eval e, eval e'] of
+  eval (AndBool e e') = case traverse eval [e, e'] of
     Just [ValBool b, ValBool b']
       -> Just $ ValBool $ b && b'
     _ -> Nothing
@@ -144,6 +144,9 @@ First, we need to define a data type that for our type information
 #+begin_src haskell :tangle yes :session yes
   data ITType = NatType
 	      | BoolType
+  data family SType (t :: ITType)
+  data instance SType NatType = SNatType
+  data instance SType BoolType = SBoolType
 #+end_src
 
 Using the 'DataKinds' and 'GADTs' extension, we can use this to
@@ -156,6 +159,7 @@ parameterize our expression type:
     ITIte ::  ITExpr BoolType -> ITExpr t ->  ITExpr t -> ITExpr t
     ITEqNat :: ITExpr NatType ->  ITExpr NatType -> ITExpr BoolType
     ITAndBool :: ITExpr BoolType -> ITExpr BoolType -> ITExpr BoolType
+  deriving instance Show (ITExpr t)
 #+end_src
 
 Now we can write a type checker, which is partial, and a total
@@ -222,40 +226,47 @@ a runtime value, but this signature suggests that
 
 But we can use an existencial type to package up that information
 #+begin_src haskell :tangle yes :session yes
-  data SomeITExpr = forall t. SomeITExpr (ITExpr t)
+  data SomeITExpr = forall t. SomeITExpr (SType t) (ITExpr t)
+  deriving instance (Show SomeITExpr)
 #+end_src
-
 
 Now we can define the type checker
 #+begin_src haskell :session yes :tangle yes
   typeCheck :: Expr -> Maybe SomeITExpr
 
-  typeCheck (LitNat n) = Just $ ValNat n
-  typeCheck (LitBool b) = Just $ ValBool b
+  typeCheck (LitNat n) = Just $ SomeITExpr $ ITLitNat n
+  typeCheck (LitBool b) = Just $ SomeITExpr $ ITLitBool b
 
-  typeCheck (AddNat e e') = case sequenceA [typeCheck e, typeCheck e'] of
-    Just [ValNat n, ValNat n']
-      -> Just $ ValNat $ n + n'
-    _ -> Nothing
+  typeCheck (AddNat e e') = case traverse typeCheck [e, e'] of
+    --     Just [SomeITExpr (f :: ITExpr NatType), SomeITExpr (f' :: ITExpr NatType)]
+    -- It doesn't seem like it's possible to match on the index type like this. Maybe this could be a GHC proposal
+			       -- -> _
+	    _ -> Nothing
 
-  typeCheck (Ite e e' e'') = case sequenceA [typeCheck e, typeCheck e', typeCheck e''] of
-    Just [ValBool b, ValNat n, ValNat n']
-      -> Just $ ValNat $ if b then n else n'
-    Just [ValBool b, ValBool c, ValBool c']
-      -> Just $ ValBool $ if b then c else c'
-    _ -> Nothing
+  -- typeCheck (Ite e e' e'') = case traverse typeCheck [e, e', e''] of
+  --   Just [SomeITExpr (ITLitBool b), SomeITExpr (ITLitNat n), SomeITExpr (ITLitNat n')]
+  --     -> Just $ SomeITExpr $  $ if b then n else n'
+  --   Just [SomeITExpr (ITLitBool b), SomeITExpr (ITLitBool c), SomeITExpr (ITLitBool c')]
+  --     -> Just $ ValBool $ if b then c else c'
+  --   _ -> Nothing
 
-  typeCheck (EqNat e e') = case sequenceA [typeCheck e, typeCheck e'] of
-    Just [ValNat n, ValNat n']
-      -> Just $ ValBool $ n == n'
-    _ -> Nothing
+  -- typeCheck (EqNat e e') = case traverse typeCheck [e, e'] of
+  --   Just [ValNat n, ValNat n']
+  --     -> Just $ ValBool $ n == n'
+  --   _ -> Nothing
 
-  typeCheck (AndBool e e') = case sequenceA [typeCheck e, typeCheck e'] of
-    Just [ValBool b, ValBool b']
-      -> Just $ ValBool $ b && b'
-    _ -> Nothing
+  -- typeCheck (AndBool e e') = case traverse typeCheck [e, e'] of
+  --   Just [ValBool b, ValBool b']
+  --     -> Just $ ValBool $ b && b'
+  --   _ -> Nothing
 
 #+end_src
+
+We can now apply the type checker to this example:
+: ghci> typeCheck $ AddNat (LitNat 4) (LitBool True)
+: Nothing
+: ghci> typeCheck $ AddNat (LitNat 4) (LitNat 5)
+: Just (SomeITExpr (ITLitNat 9))
 
 
 * References
