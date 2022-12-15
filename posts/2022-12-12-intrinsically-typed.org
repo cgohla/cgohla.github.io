@@ -26,6 +26,7 @@ We will need these language extensions
 	    | LitBool Bool
 	    | AddNat Expr Expr
 	    | Ite Expr Expr Expr
+	    -- ^ By which I mean 'if then else'
 	    | EqNat Expr Expr
 	    | AndBool Expr Expr
 	    deriving (Show, Eq)
@@ -34,16 +35,16 @@ We will need these language extensions
 This is not very useful as a programming language, but it is just rich
 enough to illustrate the point.
 
-This could be an expression in concrete syntax in our language:
-
+The following could be an expression in concrete syntax in our
+language:
 : if 1 == 3 then
 :   4 + 5
 : else
 :   7
 
 We really only care about abstract expressions here, so I am not going
-to to make the syntax any more precise. The concrete code above is
-meant to correspond to the following 'Expr' value
+to make the syntax any more precise. The concrete code above is meant
+to correspond to the following src_haskell{Expr} value
 #+begin_src haskell :tangle yes :session yes
   e :: Expr
   e = Ite (EqNat (LitNat 1) (LitNat 3))
@@ -71,7 +72,7 @@ i.e.
 #+begin_src haskell
 EqNat (LitNat 2) (LitBool True)
 #+end_src
-which is a legitimate value in our AST type 'Expr', but we can not
+which is a legitimate value in our AST type src_haskell{Expr}, but we can not
 really give a reasonable value to it (unless we want to follow shell
 programming conventions). So there should be some limitations as to
 which expressions we want to allow. I hope the example is simple
@@ -110,12 +111,13 @@ partial.
 #+end_src
 As you can see, for all the expressions that allow nesting, we need to
 explicitly check that each sub-expression is well-typed, and that the
-expression itself is well typed, or else return 'Nothing'.
+expression itself is well typed, or else return src_haskell{Nothing}.
 
-(In case this is too obscure, 'traverse' applies the given function to
-each list element and collects side effects, the partiality implemented
-using 'Maybe' in this case. So we only get a 'Just' if all the
-subexpressions are well-typed.)
+(In case this is too obscure, src_haskell{traverse} applies the given
+function to each list element and collects side effects, the
+partiality implemented using src_haskell{Maybe} in this case. So we
+only get a src_haskell{Just} if all the subexpressions are
+well-typed.)
 
 This is fine and will work, but we had to perform type checking and
 evaluation in the same function. We may however want to type check an
@@ -134,7 +136,7 @@ language types:
   data ITType = NatType | BoolType
 #+end_src
 
-Using the 'DataKinds' and 'GADTs' extension, we can use this to
+Using the src_haskell{DataKinds} and src_haskell{GADTs} extension, we can use this to
 index our expression type:
 #+begin_src haskell :tangle yes :session yes
   data ITExpr (t :: ITType) where
@@ -146,12 +148,12 @@ index our expression type:
     ITAndBool :: ITExpr BoolType -> ITExpr BoolType -> ITExpr BoolType
   deriving instance Show (ITExpr t)
 #+end_src
-Because of the indexing over 'ITType' it is now impossible to write
+Because of the indexing over src_haskell{ITType} it is now impossible to write
 : 2 == True
 
 It would be a Haskell type error to do so:
 : ghci> ITEqNat (ITLitNat 2) (ITLitBool True)
-:
+: 
 : <interactive>:1:23: error:
 :     • Couldn't match type ‘'BoolType’ with ‘'NatType’
 :       Expected: ITExpr 'NatType
@@ -165,11 +167,12 @@ Now we can write a type checker, which is partial, and a total
 interpreter, that only takes in well-typed expressions.
 
 Before showing you the evaluator, let's think about its type. We want
-to feed in an intrinsically typed expression of type 'ITExpr a' for
-some 'a :: ITType'. The result of evaluation however is supposed to be
-a value in Haskell, of a type depending on the object language type of
-the expression. So we have to somehow relate the types of our object
-language to Haskell types, which can be done using a type family:
+to feed in an intrinsically typed expression of type
+src_haskell{ITExpr a} for some src_haskell{a :: ITType}. The result of
+evaluation however is supposed to be a value in Haskell, of a type
+depending on the object language type of the expression. So we have to
+somehow relate the types of our object language to Haskell types,
+which can be done using a type family:
 
 #+begin_src haskell :session yes :tangle yes
   type family ValType (t :: ITType) :: *
@@ -207,23 +210,24 @@ expression from above
 
 If we apply our new interpreter to it, we see that the result type of
 evaluating a natural number expression of the object language is
-really 'Nat', as promised:
+really src_haskell{Nat}, as promised:
 : ghci> :t itEval e'
 : itEval e' :: Nat
 
-To make the picture complete we need a type checker to get 'ITExpr (t
-:: ITType)' values from 'Expr'. Instead of just returning a Boolean
-telling us if the input is well-typed, we want to return proof of that
-fact, in a way that we can actually use with our new evaluator.
+To make the picture complete we need a type checker to get
+src_haskell{ITExpr (t :: ITType)} values from
+src_haskell{Expr}. Instead of just returning a Boolean telling us if
+the input is well-typed, we want to return proof of that fact, in a
+way that we can actually use with our new evaluator.
 
 We might think that it should have signature
 #+begin_src haskell
   typeCheck :: Expr -> Maybe (ITExpr t)
 #+end_src
 but this can not work, because of course the type of the expression is
-a runtime value, that depends on what 'Expr' value was actually
-supplied; the signature on the other hand suggests that the consumer
-of the result gets to pick any 't :: ITType'.
+a runtime value, that depends on what src_haskell{Expr} value was
+actually supplied; the signature on the other hand suggests that the
+consumer of the result gets to pick any src_haskell{t :: ITType}.
 
 Solution is to define another type to hold the type checking result,
 that can encapsulate the expression type.
@@ -232,7 +236,7 @@ that can encapsulate the expression type.
 		  | ITBoolExpr (ITExpr BoolType)
   deriving instance (Show SomeITExpr)
 #+end_src
-As you can see, there is no 'ITType' variable on the left hand side of
+As you can see, there is no src_haskell{ITType} variable on the left hand side of
 the definition, but on the right hand side we have a constructor for
 each expression type, that can remember it for us.
 
@@ -271,7 +275,7 @@ Now we can define the type checker
 #+end_src
 You will notice that the structure is similar to your original
 evaluator. We encode the typing rules of our object language by
-matching on the constructors of 'SomeITExpr'.
+matching on the constructors of src_haskell{SomeITExpr}.
 
 We can now apply the type checker to our example:
 : ghci> typeCheck e
@@ -280,8 +284,8 @@ We can now apply the type checker to our example:
 : Ite (EqNat (LitNat 1) (LitNat 3)) (AddNat (LitNat 4) (LitNat 5)) (LitNat 7)
 : ghci>
 You can see how all the subexpressions were translated, and the
-'ITNatExpr' constructor tells us that the whole expression stands for
-a natural number.
+src_haskell{ITNatExpr} constructor tells us that the whole expression
+stands for a natural number.
 
 Now, the last step is composing the type checker with the evaluator:
 #+begin_src haskell :tangle yes :session yes
@@ -289,7 +293,7 @@ Now, the last step is composing the type checker with the evaluator:
   typeCheckAndEval e = applyItEval <$> typeCheck e
     where
       applyItEval x = case x of
-	ITNatExpr f -> ValNat $ itEval f
+	ITNatExpr f  -> ValNat $ itEval f
 	ITBoolExpr f -> ValBool $ itEval f
 #+end_src
 
@@ -298,6 +302,11 @@ TODO
 
 ** compare with [[http://www.timphilipwilliams.com/posts/2013-01-16-fixing-gadts.html][Fixing GADTs]]
 where they present a general way to do traversal over GADTs
+
+* Acknowledgments
+
+Thanks to [[https://github.com/divarvel][Clément Delafarge]] for
+commenting on a draft version.
 
 * References
 TODO
