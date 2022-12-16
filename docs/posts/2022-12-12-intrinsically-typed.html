@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Intrinsically Typed ASTs</title>
+        <link rel="stylesheet" href="../css/default.css" />
+    </head>
+    <body>
+        <header>
+            <div class="logo">
+                <a href="../">Björn Gohla</a>
+            </div>
+            <nav>
+                <a href="../">Home</a>
+                <a href="../projects.html">Projects</a>
+                <a href="../archive.html">Archive</a>
+                <a href="../hireme.html">Hire Me</a>
+            </nav>
+        </header>
+
+        <main role="main">
+            <h1>Intrinsically Typed ASTs</h1>
+            <article>
+    <section class="header">
+        Posted on December 12, 2022
+        
+    </section>
+    <section>
+        <h1 id="introduction">Introduction</h1>
+<p>I want to give little Haskell introduction to the concept in the
+title, that I recently learned the name of. It exploits
+<a href="https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/gadt.html">GADTs</a>,
+and
+<a href="https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/data_kinds.html">promoted types</a>, so I will assume you have seen them.</p>
+<p>I will present an abstract grammar for a little expression language
+and an evaluator for it, first in a naive way, then I will show how we
+can use the idea of intrinsic typing to separate type checking for the
+language from evaluation. As a result, the evaluator becomes much
+simpler, while the type checker has about the same complexity as the
+naive evaluator.</p>
+<p>Let me add that none of this is original, and I learned about it while
+reading a paper<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>, where they use this concept to define semantics
+for imperative languages in Agda.</p>
+<h1 id="a-naive-example-ast-and-evaluator">A Naive Example AST and Evaluator</h1>
+<p>Consider the following AST type for a simple expression language with
+Booleans and natural numbers.</p>
+<p>We will need these language extensions</p>
+<div class="sourceCode" id="cb1" data-session="yes" data-tangle="yes"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE GADTs #-}</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE DataKinds #-}</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE TypeFamilies #-}</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE StandaloneDeriving #-}</span></span></code></pre></div>
+<div class="sourceCode" id="cb2" data-tangle="yes" data-session="yes"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Numeric.Natural</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Nat</span> <span class="ot">=</span> <span class="dt">Natural</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Expr</span> <span class="ot">=</span> <span class="dt">LitNat</span> <span class="dt">Nat</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>   <span class="op">|</span> <span class="dt">LitBool</span> <span class="dt">Bool</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>   <span class="op">|</span> <span class="dt">AddNat</span> <span class="dt">Expr</span> <span class="dt">Expr</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>   <span class="op">|</span> <span class="dt">Ite</span> <span class="dt">Expr</span> <span class="dt">Expr</span> <span class="dt">Expr</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>   <span class="co">-- ^ By which I mean 'if then else'</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>   <span class="op">|</span> <span class="dt">EqNat</span> <span class="dt">Expr</span> <span class="dt">Expr</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>   <span class="op">|</span> <span class="dt">AndBool</span> <span class="dt">Expr</span> <span class="dt">Expr</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>   <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>)</span></code></pre></div>
+<p>This is not very useful as a programming language, but it is just rich
+enough to illustrate the point.</p>
+<p>The following could be an expression in concrete syntax in our
+language:</p>
+<pre class="example"><code>if 1 == 3 then
+  4 + 5
+else
+  7
+</code></pre>
+<p>We really only care about abstract expressions here, so I am not going
+to make the syntax any more precise. The concrete code above is meant
+to correspond to the following <code class="sourceCode haskell"><span class="dt">Expr</span></code> value</p>
+<div class="sourceCode" id="cb4" data-tangle="yes" data-session="yes"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ot">e ::</span> <span class="dt">Expr</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>e <span class="ot">=</span> <span class="dt">Ite</span> (<span class="dt">EqNat</span> (<span class="dt">LitNat</span> <span class="dv">1</span>) (<span class="dt">LitNat</span> <span class="dv">3</span>))</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    (<span class="dt">AddNat</span> (<span class="dt">LitNat</span> <span class="dv">4</span>) (<span class="dt">LitNat</span> <span class="dv">5</span>))</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    (<span class="dt">LitNat</span> <span class="dv">7</span>)</span></code></pre></div>
+<p>Now we want to define an interpreter for this language, but first we
+have to think about what type the result of evaluation should have in
+our meta language, i.e, Haskell in this case: In our object language
+an expression can stand for an natural number or a boolean; so to
+accommodate that, we define</p>
+<div class="sourceCode" id="cb5" data-tangle="yes" data-session="yes"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Val</span> <span class="ot">=</span> <span class="dt">ValNat</span> <span class="dt">Nat</span> <span class="op">|</span> <span class="dt">ValBool</span> <span class="dt">Bool</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>)</span></code></pre></div>
+<p>Naively we may think that evaluation should be a function</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ot">eval ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">Val</span></span></code></pre></div>
+<p>But what if we try to evaluate an expression like</p>
+<pre class="example"><code>2 == True
+</code></pre>
+<p>i.e.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="dt">EqNat</span> (<span class="dt">LitNat</span> <span class="dv">2</span>) (<span class="dt">LitBool</span> <span class="dt">True</span>)</span></code></pre></div>
+<p>which is a legitimate value in our AST type <code class="sourceCode haskell"><span class="dt">Expr</span></code>, but we
+can not really give a reasonable value to it (unless we want to follow
+shell programming conventions). So there should be some limitations as
+to which expressions we want to allow. I hope the example language is
+simple enough that you can guess what the typing rules should be.</p>
+<p>The problem is of course that, as it is, we have not encoded the
+typing rules in our definition of <code class="sourceCode haskell"><span class="dt">Expr</span></code>. So really, we
+have to check type-correctness as we evaluate, and this may fail if
+there is a type error. So our interpreter has to be partial.</p>
+<div class="sourceCode" id="cb9" data-tangle="yes" data-session="yes"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ot">eval ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Val</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>eval (<span class="dt">LitNat</span> n) <span class="ot">=</span> <span class="dt">Just</span> <span class="op">$</span> <span class="dt">ValNat</span> n</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>eval (<span class="dt">LitBool</span> b) <span class="ot">=</span> <span class="dt">Just</span> <span class="op">$</span> <span class="dt">ValBool</span> b</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>eval (<span class="dt">AddNat</span> e e') <span class="ot">=</span> <span class="kw">case</span> <span class="fu">traverse</span> eval [e, e'] <span class="kw">of</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Just</span> [<span class="dt">ValNat</span> n, <span class="dt">ValNat</span> n']</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="op">$</span> <span class="dt">ValNat</span> <span class="op">$</span> n <span class="op">+</span> n'</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  _ <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>eval (<span class="dt">Ite</span> e e' e'') <span class="ot">=</span> <span class="kw">case</span> <span class="fu">traverse</span> eval [e, e', e''] <span class="kw">of</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Just</span> [<span class="dt">ValBool</span> b, <span class="dt">ValNat</span> n, <span class="dt">ValNat</span> n']</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="op">$</span> <span class="dt">ValNat</span> <span class="op">$</span> <span class="kw">if</span> b <span class="kw">then</span> n <span class="kw">else</span> n'</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Just</span> [<span class="dt">ValBool</span> b, <span class="dt">ValBool</span> c, <span class="dt">ValBool</span> c']</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="op">$</span> <span class="dt">ValBool</span> <span class="op">$</span> <span class="kw">if</span> b <span class="kw">then</span> c <span class="kw">else</span> c'</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>  _ <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>eval (<span class="dt">EqNat</span> e e') <span class="ot">=</span> <span class="kw">case</span> <span class="fu">traverse</span> eval [e, e'] <span class="kw">of</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Just</span> [<span class="dt">ValNat</span> n, <span class="dt">ValNat</span> n']</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="op">$</span> <span class="dt">ValBool</span> <span class="op">$</span> n <span class="op">==</span> n'</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>  _ <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>eval (<span class="dt">AndBool</span> e e') <span class="ot">=</span> <span class="kw">case</span> <span class="fu">traverse</span> eval [e, e'] <span class="kw">of</span></span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Just</span> [<span class="dt">ValBool</span> b, <span class="dt">ValBool</span> b']</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>    <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="op">$</span> <span class="dt">ValBool</span> <span class="op">$</span> b <span class="op">&amp;&amp;</span> b'</span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>  _ <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span></code></pre></div>
+<p>As you can see, for all the expressions that allow nesting, we need to
+explicitly check that each sub-expression is well-typed, and that the
+expression itself is well-typed, or else return <code class="sourceCode haskell"><span class="dt">Nothing</span></code>.</p>
+<p>(In case this is too obscure, <code class="sourceCode haskell"><span class="fu">traverse</span></code> applies the given
+function to each list element and collects side effects, the
+partiality implemented using <code class="sourceCode haskell"><span class="dt">Maybe</span></code> in this case. So we
+only get a <code class="sourceCode haskell"><span class="dt">Just</span></code> if all the sub-expressions are
+well-typed.)</p>
+<p>This is fine and will work, but we had to perform type checking and
+evaluation in the same function. We may however want to type check an
+expression without evaluating and retain proof of the fact; or we may
+want to apply a function that rearranges the expression in some way,
+and be sure well-typedness is preserved.</p>
+<p>Both can be achieved by using GADTs to embed the object language type
+information in the Haskell type system.</p>
+<h1 id="an-intrinsically-typed-ast-and-evaluator">An Intrinsically Typed AST and Evaluator</h1>
+<p>First, we need to define a data type whose values represent our object
+language types:</p>
+<div class="sourceCode" id="cb10" data-tangle="yes" data-session="yes"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">ITType</span> <span class="ot">=</span> <span class="dt">NatType</span> <span class="op">|</span> <span class="dt">BoolType</span></span></code></pre></div>
+<p>Using the <code class="sourceCode haskell"><span class="dt">DataKinds</span></code> and <code class="sourceCode haskell"><span class="dt">GADTs</span></code> extension, we
+can use this to index our expression type:</p>
+<div class="sourceCode" id="cb11" data-tangle="yes" data-session="yes"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">ITExpr</span> (<span class="ot">t ::</span> <span class="dt">ITType</span>) <span class="kw">where</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">ITLitNat</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">ITExpr</span> <span class="dt">'NatType</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">ITLitBool</span><span class="ot"> ::</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">ITExpr</span> <span class="dt">'BoolType</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">ITAddNat</span><span class="ot"> ::</span> <span class="dt">ITExpr</span> <span class="dt">'NatType</span> <span class="ot">-&gt;</span>  <span class="dt">ITExpr</span> <span class="dt">'NatType</span> <span class="ot">-&gt;</span> <span class="dt">ITExpr</span> <span class="dt">'NatType</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">ITIte</span><span class="ot"> ::</span>  <span class="dt">ITExpr</span> <span class="dt">'BoolType</span> <span class="ot">-&gt;</span> <span class="dt">ITExpr</span> t <span class="ot">-&gt;</span>  <span class="dt">ITExpr</span> t <span class="ot">-&gt;</span> <span class="dt">ITExpr</span> t</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">ITEqNat</span><span class="ot"> ::</span> <span class="dt">ITExpr</span> <span class="dt">'NatType</span> <span class="ot">-&gt;</span>  <span class="dt">ITExpr</span> <span class="dt">'NatType</span> <span class="ot">-&gt;</span> <span class="dt">ITExpr</span> <span class="dt">'BoolType</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">ITAndBool</span><span class="ot"> ::</span> <span class="dt">ITExpr</span> <span class="dt">'BoolType</span> <span class="ot">-&gt;</span> <span class="dt">ITExpr</span> <span class="dt">'BoolType</span> <span class="ot">-&gt;</span> <span class="dt">ITExpr</span> <span class="dt">'BoolType</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="kw">deriving</span> <span class="kw">instance</span> <span class="dt">Show</span> (<span class="dt">ITExpr</span> t)</span></code></pre></div>
+<p>Because of the indexing over <code class="sourceCode haskell"><span class="dt">ITType</span></code> it is now impossible
+to write</p>
+<pre class="example"><code>2 == True
+</code></pre>
+<p>It would be a Haskell type error to do so:</p>
+<pre class="example"><code>ghci&gt; ITEqNat (ITLitNat 2) (ITLitBool True)
+
+&lt;interactive&gt;:1:23: error:
+    • Couldn't match type ‘'BoolType’ with ‘'NatType’
+      Expected: ITExpr 'NatType
+        Actual: ITExpr 'BoolType
+    • In the second argument of ‘ITEqNat’, namely ‘(ITLitBool True)’
+      In the expression: ITEqNat (ITLitNat 2) (ITLitBool True)
+      In an equation for ‘it’: it = ITEqNat (ITLitNat 2) (ITLitBool True)
+ghci&gt;
+</code></pre>
+<p>To put it differently, because of the refined definition of our
+expression data type, it is now impossible for it to contain ill- or
+ambiguously typed expressions; we also say expressions in this grammar
+are <strong>intrinsically typed</strong>.</p>
+<p>Now we can write a type checker, which is partial, and a total
+interpreter, that only takes in well-typed expressions.</p>
+<p>Before showing you the evaluator, let’s think about its type. We want
+to feed in an intrinsically typed expression of type
+<code class="sourceCode haskell"><span class="dt">ITExpr</span> a</code> for some <code class="sourceCode haskell"><span class="ot">a ::</span> <span class="dt">ITType</span></code>. The result of
+evaluation however is supposed to be a value in Haskell, of a type
+depending on the object language type of the expression. So we have to
+somehow relate the types of our object language to Haskell types,
+which can be done using a type family:</p>
+<div class="sourceCode" id="cb14" data-session="yes" data-tangle="yes"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="kw">family</span> <span class="dt">ValType</span> (<span class="ot">t ::</span> <span class="dt">ITType</span>)<span class="ot"> ::</span> <span class="op">*</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">ValType</span> <span class="dt">'NatType</span> <span class="ot">=</span> <span class="dt">Nat</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="kw">instance</span> <span class="dt">ValType</span> <span class="dt">'BoolType</span> <span class="ot">=</span> <span class="dt">Bool</span></span></code></pre></div>
+<p>Since our expressions now expose their object language types in
+Haskell, our evaluator will have a type signature, expressing the fact
+that, e.g., natural number typed expressions in our object language
+evaluate to natural numbers in Haskell, and likewise for Booleans.</p>
+<div class="sourceCode" id="cb15" data-startFrom data-session="yes" data-tangle="yes"><pre class="sourceCode numberSource haskell numberLines"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1"></a><span class="ot">itEval ::</span> <span class="dt">ITExpr</span> a <span class="ot">-&gt;</span> <span class="dt">ValType</span> a</span>
+<span id="cb15-2"><a href="#cb15-2"></a>itEval (<span class="dt">ITLitNat</span> n) <span class="ot">=</span> n</span>
+<span id="cb15-3"><a href="#cb15-3"></a>itEval (<span class="dt">ITLitBool</span> b) <span class="ot">=</span> b</span>
+<span id="cb15-4"><a href="#cb15-4"></a>itEval (<span class="dt">ITAddNat</span> e e') <span class="ot">=</span> itEval e <span class="op">+</span> itEval e'</span>
+<span id="cb15-5"><a href="#cb15-5"></a>itEval (<span class="dt">ITIte</span> e e' e'') <span class="ot">=</span></span>
+<span id="cb15-6"><a href="#cb15-6"></a>  <span class="kw">if</span> (itEval e) <span class="kw">then</span> itEval e' <span class="kw">else</span> itEval e''</span>
+<span id="cb15-7"><a href="#cb15-7"></a>itEval (<span class="dt">ITEqNat</span> e e') <span class="ot">=</span> itEval e <span class="op">==</span> itEval e'</span>
+<span id="cb15-8"><a href="#cb15-8"></a>itEval (<span class="dt">ITAndBool</span> e e') <span class="ot">=</span> itEval e <span class="op">&amp;&amp;</span> itEval e'</span></code></pre></div>
+<p>This new evaluator is simpler and nicer, because it doesn’t have to
+check the well-typedness of expressions anymore.</p>
+<p>Let’s consider the intrinsically typed version of the example
+expression from above</p>
+<div class="sourceCode" id="cb16" data-tangle="yes" data-session="yes"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ot">e' ::</span> <span class="dt">ITExpr</span> <span class="dt">'NatType</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>e' <span class="ot">=</span> <span class="dt">ITIte</span> (<span class="dt">ITEqNat</span> (<span class="dt">ITLitNat</span> <span class="dv">1</span>) (<span class="dt">ITLitNat</span> <span class="dv">3</span>))</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>     (<span class="dt">ITAddNat</span> (<span class="dt">ITLitNat</span> <span class="dv">4</span>) (<span class="dt">ITLitNat</span> <span class="dv">5</span>))</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>     (<span class="dt">ITLitNat</span> <span class="dv">7</span>)</span></code></pre></div>
+<p>If we apply our new interpreter to it, we see that the result type of
+evaluating a natural number expression of the object language is
+really <code class="sourceCode haskell"><span class="dt">Nat</span></code>, as promised:</p>
+<pre class="example"><code>ghci&gt; :t itEval e'
+itEval e' :: Nat
+</code></pre>
+<p>To make the picture complete we need a type checker to get
+<code class="sourceCode haskell"><span class="dt">ITExpr</span> (<span class="ot">t ::</span> <span class="dt">ITType</span>)</code> values from
+<code class="sourceCode haskell"><span class="dt">Expr</span></code>. Instead of just returning a Boolean telling us if
+the input is well-typed, we want to return proof of that fact, in a
+way that we can actually use with our new evaluator.</p>
+<p>We might think that it should have signature</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="ot">typeCheck ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">ITExpr</span> t)</span></code></pre></div>
+<p>but this can not work, because of course the type of the expression is
+a runtime value, that depends on what <code class="sourceCode haskell"><span class="dt">Expr</span></code> value was
+actually supplied; the signature on the other hand suggests that the
+consumer of the result gets to pick any <code class="sourceCode haskell"><span class="ot">t ::</span> <span class="dt">ITType</span></code>.</p>
+<p>Solution is to define another type to hold the type checking result,
+that can encapsulate the expression type.</p>
+<div class="sourceCode" id="cb19" data-tangle="yes" data-session="yes"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">SomeITExpr</span> <span class="ot">=</span> <span class="dt">ITNatExpr</span> (<span class="dt">ITExpr</span> <span class="dt">'NatType</span>)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> <span class="dt">ITBoolExpr</span> (<span class="dt">ITExpr</span> <span class="dt">'BoolType</span>)</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="kw">deriving</span> <span class="kw">instance</span> (<span class="dt">Show</span> <span class="dt">SomeITExpr</span>)</span></code></pre></div>
+<p>As you can see, there is no <code class="sourceCode haskell"><span class="dt">ITType</span></code> variable on the left hand side of
+the definition, but on the right hand side we have a constructor for
+each expression type, that can remember it for us.</p>
+<p>(In a realistic application one would probably use an existential type
+here, especially if the object language type system was more
+sophisticated; but this would lead to some other complications, that I
+want to avoid in this exposition.)</p>
+<p>Now we can define the type checker</p>
+<div class="sourceCode" id="cb20" data-session="yes" data-tangle="yes"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="ot">typeCheck ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">SomeITExpr</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>typeCheck (<span class="dt">LitNat</span> n) <span class="ot">=</span> <span class="dt">Just</span> <span class="op">$</span> <span class="dt">ITNatExpr</span> <span class="op">$</span> <span class="dt">ITLitNat</span> n</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>typeCheck (<span class="dt">LitBool</span> b) <span class="ot">=</span> <span class="dt">Just</span> <span class="op">$</span> <span class="dt">ITBoolExpr</span> <span class="op">$</span> <span class="dt">ITLitBool</span> b</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>typeCheck (<span class="dt">AddNat</span> e e') <span class="ot">=</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">case</span> <span class="fu">traverse</span> typeCheck [e, e'] <span class="kw">of</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Just</span> [<span class="dt">ITNatExpr</span> f, <span class="dt">ITNatExpr</span> f'] <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="op">$</span> <span class="dt">ITNatExpr</span> <span class="op">$</span> <span class="dt">ITAddNat</span> f f'</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>    _ <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>typeCheck (<span class="dt">Ite</span> e e' e'') <span class="ot">=</span></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>  <span class="kw">case</span> <span class="fu">traverse</span> typeCheck [e, e', e''] <span class="kw">of</span></span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Just</span> [<span class="dt">ITBoolExpr</span> b, <span class="dt">ITNatExpr</span> c, <span class="dt">ITNatExpr</span> c'] <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="op">$</span> <span class="dt">ITNatExpr</span> <span class="op">$</span> <span class="dt">ITIte</span> b c c'</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Just</span> [<span class="dt">ITBoolExpr</span> b, <span class="dt">ITBoolExpr</span> c, <span class="dt">ITBoolExpr</span> c'] <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="op">$</span> <span class="dt">ITBoolExpr</span> <span class="op">$</span> <span class="dt">ITIte</span> b c c'</span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>    _ <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>typeCheck (<span class="dt">EqNat</span> e e') <span class="ot">=</span></span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>  <span class="kw">case</span> <span class="fu">traverse</span> typeCheck [e, e'] <span class="kw">of</span></span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Just</span> [<span class="dt">ITNatExpr</span> f, <span class="dt">ITNatExpr</span> f'] <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="op">$</span> <span class="dt">ITBoolExpr</span> <span class="op">$</span> <span class="dt">ITEqNat</span> f f'</span>
+<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a>    _ <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span>
+<span id="cb20-21"><a href="#cb20-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-22"><a href="#cb20-22" aria-hidden="true" tabindex="-1"></a>typeCheck (<span class="dt">AndBool</span> e e') <span class="ot">=</span></span>
+<span id="cb20-23"><a href="#cb20-23" aria-hidden="true" tabindex="-1"></a>  <span class="kw">case</span> <span class="fu">traverse</span> typeCheck [e, e'] <span class="kw">of</span></span>
+<span id="cb20-24"><a href="#cb20-24" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Just</span> [<span class="dt">ITBoolExpr</span> f, <span class="dt">ITBoolExpr</span> f'] <span class="ot">-&gt;</span> <span class="dt">Just</span> <span class="op">$</span> <span class="dt">ITBoolExpr</span> <span class="op">$</span> <span class="dt">ITAndBool</span> f f'</span>
+<span id="cb20-25"><a href="#cb20-25" aria-hidden="true" tabindex="-1"></a>    _ <span class="ot">-&gt;</span> <span class="dt">Nothing</span></span></code></pre></div>
+<p>You will notice that the structure is similar to your original
+evaluator. We encode the typing rules of our object language by
+matching on the constructors of <code class="sourceCode haskell"><span class="dt">SomeITExpr</span></code>.</p>
+<p>We can now apply the type checker to our example:</p>
+<pre class="example"><code>ghci&gt; typeCheck e
+Just (ITNatExpr (ITIte (ITEqNat (ITLitNat 1) (ITLitNat 3)) (ITAddNat (ITLitNat 4) (ITLitNat 5)) (ITLitNat 7)))
+ghci&gt; e
+Ite (EqNat (LitNat 1) (LitNat 3)) (AddNat (LitNat 4) (LitNat 5)) (LitNat 7)
+ghci&gt;
+</code></pre>
+<p>You can see how all the sub-expressions were translated, and the
+<code class="sourceCode haskell"><span class="dt">ITNatExpr</span></code> constructor tells us that the whole expression
+stands for a natural number.</p>
+<p>Now, the last step is composing the type checker with the evaluator:</p>
+<div class="sourceCode" id="cb22" data-tangle="yes" data-session="yes"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="ot"> typeCheckAndEval ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Val</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a> typeCheckAndEval e <span class="ot">=</span> applyItEval <span class="op">&lt;$&gt;</span> typeCheck e</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>   <span class="kw">where</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>     applyItEval x <span class="ot">=</span> <span class="kw">case</span> x <span class="kw">of</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="dt">ITNatExpr</span> f  <span class="ot">-&gt;</span> <span class="dt">ValNat</span> <span class="op">$</span> itEval f</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="dt">ITBoolExpr</span> f <span class="ot">-&gt;</span> <span class="dt">ValBool</span> <span class="op">$</span> itEval f</span></code></pre></div>
+<p>And of course it does the right thing:</p>
+<pre class="example"><code>ghci&gt; typeCheckAndEval e
+Just (ValNat 7)
+ghci&gt; e
+Ite (EqNat (LitNat 1) (LitNat 3)) (AddNat (LitNat 4) (LitNat 5)) (LitNat 7)
+ghci&gt; 
+</code></pre>
+<h1 id="related-work">Related Work</h1>
+<p>Tim Philip Williams does something similar in a blog post<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>, but
+the focus there is on recursion schemes for GADTs.</p>
+<h1 id="acknowledgments">Acknowledgments</h1>
+<p>Thanks to <a href="https://github.com/divarvel">Clément Delafargue</a> for
+commenting on a draft version of this post.</p>
+<h1 id="footnotes">Footnotes</h1>
+<section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p><a href="https://dl.acm.org/doi/10.1145/3158104 ">Intrinsically-typed definitional interpreters for imperative languages</a><a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p><a href="http://www.timphilipwilliams.com/posts/2013-01-16-fixing-gadts.html">Fixing GADTs</a><a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+    </section>
+</article>
+
+        </main>
+
+        <footer>
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+        </footer>
+    </body>
+</html>
