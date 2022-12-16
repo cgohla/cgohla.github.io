@@ -305,7 +305,7 @@ where they present a general way to do traversal over GADTs
 
 * Acknowledgments
 
-Thanks to [[https://github.com/divarvel][Clément Delafarge]] for
+Thanks to [[https://github.com/divarvel][Clément Delafargue]] for
 commenting on a draft version.
 
 * References
