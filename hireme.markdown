@@ -2,8 +2,12 @@
 title: Hire Me
 ---
 
-If you have a project in Haskell you can hire me as a software
+~~If you have a project in Haskell you can hire me as a software
 engineer.
+~~
+
+**Update (2023-01-16)** I currently work for
+[Scrive](https://www.scrive.com).
 
 Apart from a PhD in Mathematics, I have 4 years experience as a
 professional software developer. I like to work in Haskell and
