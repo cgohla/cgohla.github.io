@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Conference Talk, EuroBSDCon 2023, Coimbra</title>
+        <link rel="stylesheet" href="../css/default.css" />
+    </head>
+    <body>
+        <header>
+            <div class="logo">
+                <a href="../">Björn Gohla</a>
+            </div>
+            <nav>
+                <a href="../">Home</a>
+                <a href="../projects.html">Projects</a>
+                <a href="../archive.html">Archive</a>
+                <a href="../hireme.html">Hire Me</a>
+            </nav>
+        </header>
+
+        <main role="main">
+            <h1>Conference Talk, EuroBSDCon 2023, Coimbra</h1>
+            <article>
+    <section class="header">
+        Posted on September 16, 2023
+        
+    </section>
+    <section>
+        <h1 id="a-haskell-binding-for-openbsd-pledge">A Haskell Binding for OpenBSD pledge</h1>
+<h3 id="overview">Overview</h3>
+<p>EuroBSDCon 2023, Coimbra</p>
+<ul>
+<li>OpenBSD Pledge</li>
+<li>Haskell</li>
+<li>Design</li>
+<li>Code examples</li>
+</ul>
+<h3 id="pledge">Pledge</h3>
+<p>Restrict kernel API</p>
+<div class="sourceCode" id="cb1" data-org-language="C"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;unistd.h&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;stdio.h&gt;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> main<span class="op">(</span><span class="dt">int</span> argc<span class="op">,</span> <span class="dt">char</span> <span class="op">**</span>argv<span class="op">){</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  pledge <span class="op">(</span><span class="st">&quot;stdio&quot;</span><span class="op">,</span><span class="st">&quot;&quot;</span><span class="op">);</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  printf <span class="op">(</span><span class="st">&quot;hello</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  pledge <span class="op">(</span><span class="st">&quot;&quot;</span><span class="op">,</span><span class="st">&quot;&quot;</span><span class="op">);</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  printf <span class="op">(</span><span class="st">&quot;hello again</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span> <span class="co">// process gets terminated</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h2 id="haskell">Haskell</h2>
+<h3 id="haskell-language">Haskell Language</h3>
+<ul>
+<li><p>first defined in the 1990s</p></li>
+<li><p>functional</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>(\x <span class="ot">-&gt;</span> x <span class="op">+</span> x)</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>(<span class="fu">length</span> <span class="op">.</span> revert) [<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>]</span></code></pre></div></li>
+<li><p>lazily evaluated</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>(\x <span class="ot">-&gt;</span> x <span class="op">*</span> x) (<span class="dv">2</span> <span class="op">+</span> <span class="dv">2</span>)</span></code></pre></div></li>
+<li><p>pure</p></li>
+<li><p>with a good type system</p></li>
+</ul>
+<h3 id="ghc">GHC</h3>
+<p>The Glasgow Haskell Compiler</p>
+<ul>
+<li>de facto standard compiler, REPL and RTS</li>
+<li>various backends and platforms</li>
+<li>m:n multithreading</li>
+<li>software transactional memory</li>
+<li>garbage collector</li>
+</ul>
+<h3 id="haskell-ecosystem">Haskell Ecosystem</h3>
+<ul>
+<li>Hackage: central package repo</li>
+<li>Hoogle: search engine</li>
+<li>Cabal: package manager and build system</li>
+<li>Haskell Language Server</li>
+</ul>
+<h2 id="imperative-haskell-and-side-effects">Imperative Haskell and Side Effects</h2>
+<h3 id="hello-world">Hello World</h3>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">System.IO</span> (appendFile)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="ot">formGreeting ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>formGreeting n <span class="ot">=</span> <span class="st">&quot;hello &quot;</span> <span class="op">&lt;&gt;</span> n <span class="op">&lt;&gt;</span> <span class="st">&quot;!&quot;</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">&quot;what is your name?&quot;</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  name <span class="ot">&lt;-</span> <span class="fu">getLine</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">appendFile</span> <span class="st">&quot;names.txt&quot;</span> <span class="op">$</span> name <span class="op">&lt;&gt;</span> <span class="st">&quot;\n&quot;</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="op">$</span> formGreeting name</span></code></pre></div>
+<h3 id="with-promises">With Promises</h3>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">System.IO</span> (appendFile)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="ot">formGreeting ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>formGreeting n <span class="ot">=</span> <span class="st">&quot;hello &quot;</span> <span class="op">&lt;&gt;</span> n <span class="op">&lt;&gt;</span> <span class="st">&quot;!&quot;</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">&quot;what is your name?&quot;</span>          <span class="co">-- stdio</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  name <span class="ot">&lt;-</span> <span class="fu">getLine</span>                        <span class="co">-- stdio</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">appendFile</span> <span class="st">&quot;names.txt&quot;</span> <span class="op">$</span> name <span class="op">&lt;&gt;</span> <span class="st">&quot;\n&quot;</span>  <span class="co">-- wpath, stdio</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="op">$</span> formGreeting name           <span class="co">-- stdio</span></span></code></pre></div>
+<h2 id="introducing-pledge">Introducing Pledge</h2>
+<h3 id="ffi-binding-for-pledge">FFI Binding for Pledge</h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- System.OpenBSD.Pledge.Internal</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ot">pledge ::</span> <span class="dt">Set</span> <span class="dt">Promise</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co">-- System.OpenBSD.Pledge.Promise.Type</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Promise</span> <span class="ot">=</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Stdio</span> <span class="op">|</span> <span class="dt">Rpath</span> <span class="op">|</span> <span class="dt">Wpath</span> <span class="op">|</span> <span class="dt">Cpath</span> <span class="op">|</span> <span class="dt">Dpath</span> <span class="op">|</span> <span class="dt">Tmppath</span> <span class="op">|</span> <span class="dt">Inet</span> <span class="op">|</span> <span class="dt">Mcast</span> <span class="op">|</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Fattr</span> <span class="op">|</span> <span class="dt">Chown</span> <span class="op">|</span> <span class="dt">Flock</span> <span class="op">|</span> <span class="dt">Unix</span> <span class="op">|</span> <span class="dt">Dns</span> <span class="op">|</span> <span class="dt">Getpw</span> <span class="op">|</span> <span class="dt">Sendfd</span> <span class="op">|</span> <span class="dt">Recvfd</span> <span class="op">|</span> <span class="dt">Tape</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> <span class="dt">Tty</span> <span class="op">|</span> <span class="dt">Proc</span> <span class="op">|</span> <span class="dt">Exec</span> <span class="op">|</span> <span class="dt">Prot_exec</span><span class="op">|</span> <span class="dt">Settime</span> <span class="op">|</span> <span class="dt">Ps</span> <span class="op">|</span> <span class="dt">Vminfo</span> <span class="op">|</span> <span class="dt">Id</span> <span class="op">|</span> <span class="dt">Route</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> <span class="dt">Wroute</span> <span class="op">|</span> <span class="dt">Audio</span> <span class="op">|</span> <span class="dt">Video</span> <span class="op">|</span> <span class="dt">Bpf</span><span class="op">|</span> <span class="dt">Unveil</span> <span class="op">|</span> <span class="dt">Error</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>, <span class="dt">Enum</span>, <span class="dt">Ord</span>)</span></code></pre></div>
+<p>c.f. <code class="verbatim">pledge(2)</code></p>
+<h3 id="what-to-pledge">What to Pledge</h3>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">System.IO</span> (appendFile)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">System.OpenBSD.Pledge.Promise.Type</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">System.OpenBSD.Pledge.Internal</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="ot">formGreeting ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>formGreeting n <span class="ot">=</span> <span class="st">&quot;hello &quot;</span> <span class="op">&lt;&gt;</span> n <span class="op">&lt;&gt;</span> <span class="st">&quot;!&quot;</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  pledge _</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">&quot;what is your name?&quot;</span>          <span class="co">-- stdio</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  pledge _</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>  name <span class="ot">&lt;-</span> <span class="fu">getLine</span>                        <span class="co">-- stdio</span></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>  pledge _</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">appendFile</span> <span class="st">&quot;names.txt&quot;</span> <span class="op">$</span> name <span class="op">&lt;&gt;</span> <span class="st">&quot;\n&quot;</span>  <span class="co">-- wpath, stdio</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>  pledge _</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="op">$</span> formGreeting name           <span class="co">-- stdio</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>  pledge <span class="op">$</span> fromList []</span></code></pre></div>
+<h3 id="solution">Solution</h3>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">System.IO</span> (appendFile)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">System.OpenBSD.Pledge.Promise.Type</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">System.OpenBSD.Pledge.Internal</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="ot">formGreeting ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>formGreeting n <span class="ot">=</span> <span class="st">&quot;hello &quot;</span> <span class="op">&lt;&gt;</span> n <span class="op">&lt;&gt;</span> <span class="st">&quot;!&quot;</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>  pledge <span class="op">$</span> fromList [<span class="dt">Stdio</span>, <span class="dt">Wpath</span>]</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">&quot;what is your name?&quot;</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>  pledge <span class="op">$</span> fromList [<span class="dt">Stdio</span>, <span class="dt">Wpath</span>]</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>  name <span class="ot">&lt;-</span> <span class="fu">getLine</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>  pledge <span class="op">$</span> fromList [<span class="dt">Stdio</span>, <span class="dt">Wpath</span>]</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">appendFile</span> <span class="st">&quot;names.txt&quot;</span> <span class="op">$</span> name <span class="op">&lt;&gt;</span> <span class="st">&quot;\n&quot;</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>  pledge <span class="op">$</span> fromList [<span class="dt">Stdio</span>]</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="op">$</span> formGreeting name</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>  pledge <span class="op">$</span> fromList []</span></code></pre></div>
+<h2 id="imperative-but-functional">Imperative but Functional</h2>
+<h3 id="a-puzzle">A Puzzle</h3>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">do</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  s <span class="ot">&lt;-</span> <span class="fu">getLine</span> <span class="co">-- IO String</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> s <span class="co">-- String -&gt; IO ()</span></span></code></pre></div>
+<p>How is this functional?</p>
+<h3 id="with-sugar">With Sugar</h3>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">do</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  s <span class="ot">&lt;-</span> <span class="fu">getLine</span> <span class="co">-- IO String</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> s <span class="co">-- String -&gt; IO ()</span></span></code></pre></div>
+<p>is actually</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">getLine</span> <span class="op">&gt;&gt;=</span> (\s <span class="ot">-&gt;</span> <span class="fu">putStrLn</span> s)</span></code></pre></div>
+<h3 id="bind">Bind</h3>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">getLine</span> <span class="op">&gt;&gt;=</span> (\s <span class="ot">-&gt;</span> <span class="fu">putStrLn</span> s)</span></code></pre></div>
+<p>where</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ot">(&gt;&gt;=) ::</span> <span class="dt">IO</span> a <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">IO</span> b) <span class="ot">-&gt;</span> <span class="dt">IO</span> b</span></code></pre></div>
+<h2 id="make-bind-work-for-us">Make Bind Work for Us</h2>
+<h3 id="label-actions">Label Actions</h3>
+<p>with promoted types</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- System.OpenBSD.MultiPledge</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Pledge</span> (<span class="ot">zs ::</span> [<span class="dt">Promise</span>]) (<span class="ot">ps ::</span> [<span class="dt">Promise</span>]) a</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="ot">=</span> <span class="dt">Pledge</span> {<span class="ot"> getAction ::</span> <span class="dt">IO</span> a }</span></code></pre></div>
+<p>requires some explanation</p>
+<h3 id="the-explanation">The Explanation</h3>
+<p><code class="verbatim">DataKinds</code> promotes data constructors to types</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="dt">Stdio</span><span class="ot"> ::</span> <span class="dt">Promise</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="dt">Promise</span><span class="ot"> ::</span> <span class="op">*</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="dt">'Stdio</span><span class="ot"> ::</span> <span class="dt">Promise</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>[<span class="dt">Stdio</span>, <span class="dt">Inet</span>]<span class="ot"> ::</span> [<span class="dt">Promise</span>]</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>[<span class="dt">Promise</span>]<span class="ot"> ::</span> <span class="op">*</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>'[ <span class="dt">'Stdio</span>, <span class="dt">'Inet</span>]<span class="ot"> ::</span> [<span class="dt">Promise</span>]</span></code></pre></div>
+<h3 id="for-example">For example</h3>
+<p>annotate base functions</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- System.Directory</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="ot">getDirectoryContents ::</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> [<span class="dt">FilePath</span>]</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">System.Directory</span>           <span class="kw">as</span> <span class="dt">D</span> (getDirectoryContents)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="ot">getDirectoryContents ::</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">Pledge</span> zs '[ <span class="dt">'Rpath</span>] [<span class="dt">FilePath</span>]</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>getDirectoryContents <span class="ot">=</span> <span class="dt">Pledge</span> <span class="op">.</span> D.getDirectoryContents</span></code></pre></div>
+<h3 id="a-new-bind-operator">A New Bind Operator</h3>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- System.OpenBSD.MultiPledge</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="ot">(&gt;&gt;=) ::</span> <span class="kw">forall</span> zs ps m qs a b<span class="op">.</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>      ( <span class="dt">MonadIO</span> m, <span class="dt">SingI</span> zs, <span class="dt">SingI</span> ps, <span class="dt">SingI</span> qs</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>   <span class="ot">=&gt;</span> <span class="dt">Pledge</span> (zs <span class="ot">`Union`</span> ps) qs m a</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>   <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Pledge</span> zs ps m b)</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>   <span class="ot">-&gt;</span> <span class="dt">Pledge</span> zs (ps <span class="ot">`Union`</span> qs) m b</span></code></pre></div>
+<p>best explained with a picture and some code</p>
+<h2 id="closing">Closing</h2>
+<h3 id="caveats">Caveats</h3>
+<ul>
+<li>no multithreading</li>
+<li>no exec promises</li>
+<li>redundant pledge calls</li>
+<li>not portable (so far)</li>
+</ul>
+<h3 id="resources">Resources</h3>
+<ul>
+<li><p><a href="https://github.com/cgohla/pledge">Haskell Pledge</a></p></li>
+<li><p><a href="https://www.haskell.org">Haskell.org</a></p></li>
+<li><p><a href="https://dl.acm.org/doi/abs/10.1145/292540.292555">Abadi et al., A core calculus of dependency</a></p></li>
+</ul>
+<h3 id="thanks">Thanks</h3>
+<p>Björn Gohla</p>
+<p><a href="https://mathstodon.xyz/@6d03">https://mathstodon.xyz/@6d03</a></p>
+<p><a href="https://6d03.info">https://6d03.info</a></p>
+    </section>
+</article>
+
+        </main>
+
+        <footer>
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+        </footer>
+    </body>
+</html>
