@@ -1,0 +1,300 @@
+---
+title: Conference Talk, EuroBSDCon 2023, Coimbra
+---
+
+#+EPRESENT_FRAME_LEVEL:3
+* A Haskell Binding for OpenBSD pledge
+
+*** Overview
+
+EuroBSDCon 2023, Coimbra
+
+ - OpenBSD Pledge
+ - Haskell
+ - Design
+ - Code examples
+
+*** Pledge
+
+Restrict kernel API
+
+#+begin_src C
+  #include <unistd.h>
+  #include <stdio.h>
+
+  int main(int argc, char **argv){
+    pledge ("stdio","");
+    printf ("hello\n");
+    pledge ("","");
+    printf ("hello again\n"); // process gets terminated
+  }
+#+end_src
+
+** Haskell
+
+*** Haskell Language
+
+ - first defined in the 1990s
+ - functional
+
+   #+begin_src haskell
+     (\x -> x + x)
+   #+end_src
+
+   #+begin_src haskell
+     (length . revert) [1,2,3]
+   #+end_src
+
+ - lazily evaluated
+
+   #+begin_src haskell
+     (\x -> x * x) (2 + 2)
+   #+end_src
+
+ - pure
+ - with a good type system
+   
+*** GHC
+
+The Glasgow Haskell Compiler
+ - de facto standard compiler, REPL and RTS
+ - various backends and platforms
+ - m:n multithreading
+ - software transactional memory
+ - garbage collector
+
+*** Haskell Ecosystem
+
+ - Hackage: central package repo
+ - Hoogle: search engine
+ - Cabal: package manager and build system
+ - Haskell Language Server
+
+** Imperative Haskell and Side Effects
+
+*** Hello World
+
+#+begin_src haskell
+  module Main where
+
+  import System.IO (appendFile)
+
+  formGreeting :: String -> String
+  formGreeting n = "hello " <> n <> "!"
+
+  main :: IO ()
+  main = do
+    putStrLn "what is your name?"
+    name <- getLine
+    appendFile "names.txt" $ name <> "\n"
+    putStrLn $ formGreeting name
+#+end_src
+
+*** With Promises
+
+#+begin_src haskell
+  module Main where
+
+  import System.IO (appendFile)
+
+  formGreeting :: String -> String
+  formGreeting n = "hello " <> n <> "!"
+
+  main :: IO ()
+  main = do
+    putStrLn "what is your name?"          -- stdio
+    name <- getLine                        -- stdio
+    appendFile "names.txt" $ name <> "\n"  -- wpath, stdio
+    putStrLn $ formGreeting name           -- stdio
+#+end_src
+
+** Introducing Pledge
+
+*** FFI Binding for Pledge
+
+#+begin_src haskell
+  -- System.OpenBSD.Pledge.Internal
+  pledge :: Set Promise -> IO ()
+
+  -- System.OpenBSD.Pledge.Promise.Type
+  data Promise =
+    Stdio | Rpath | Wpath | Cpath | Dpath | Tmppath | Inet | Mcast |
+    Fattr | Chown | Flock | Unix | Dns | Getpw | Sendfd | Recvfd | Tape
+    | Tty | Proc | Exec | Prot_exec| Settime | Ps | Vminfo | Id | Route
+    | Wroute | Audio | Video | Bpf| Unveil | Error
+    deriving (Show, Eq, Enum, Ord)
+#+end_src
+
+c.f. =pledge(2)=
+
+*** What to Pledge
+
+#+begin_src haskell
+  module Main where
+
+  import System.IO (appendFile)
+
+  import System.OpenBSD.Pledge.Promise.Type
+  import System.OpenBSD.Pledge.Internal
+
+  formGreeting :: String -> String
+  formGreeting n = "hello " <> n <> "!"
+
+  main :: IO ()
+  main = do
+    pledge _
+    putStrLn "what is your name?"          -- stdio
+    pledge _
+    name <- getLine                        -- stdio
+    pledge _
+    appendFile "names.txt" $ name <> "\n"  -- wpath, stdio
+    pledge _
+    putStrLn $ formGreeting name           -- stdio
+    pledge $ fromList []
+#+end_src
+
+*** Solution
+
+#+begin_src haskell
+  module Main where
+
+  import System.IO (appendFile)
+
+  import System.OpenBSD.Pledge.Promise.Type
+  import System.OpenBSD.Pledge.Internal
+
+  formGreeting :: String -> String
+  formGreeting n = "hello " <> n <> "!"
+
+  main :: IO ()
+  main = do
+    pledge $ fromList [Stdio, Wpath]
+    putStrLn "what is your name?"
+    pledge $ fromList [Stdio, Wpath]
+    name <- getLine
+    pledge $ fromList [Stdio, Wpath]
+    appendFile "names.txt" $ name <> "\n"
+    pledge $ fromList [Stdio]
+    putStrLn $ formGreeting name
+    pledge $ fromList []
+#+end_src
+
+** Imperative but Functional
+
+*** A Puzzle
+
+#+begin_src haskell
+  do
+    s <- getLine -- IO String
+    putStrLn s -- String -> IO ()
+#+end_src
+
+How is this functional?
+
+*** With Sugar
+
+#+begin_src haskell
+  do
+    s <- getLine -- IO String
+    putStrLn s -- String -> IO ()
+#+end_src
+
+is actually
+
+#+begin_src haskell
+  getLine >>= (\s -> putStrLn s)
+#+end_src
+
+*** Bind
+
+#+begin_src haskell
+  getLine >>= (\s -> putStrLn s)
+#+end_src
+
+where
+
+#+begin_src haskell
+  (>>=) :: IO a -> (a -> IO b) -> IO b
+#+end_src
+
+
+** Make Bind Work for Us
+
+*** Label Actions
+
+with promoted types
+
+#+begin_src haskell
+  -- System.OpenBSD.MultiPledge
+  newtype Pledge (zs :: [Promise]) (ps :: [Promise]) a
+    = Pledge { getAction :: IO a }
+#+end_src
+
+requires some explanation
+
+*** The Explanation
+
+=DataKinds= promotes data constructors to types
+
+#+begin_src haskell
+  Stdio :: Promise
+  Promise :: *
+  'Stdio :: Promise
+
+  [Stdio, Inet] :: [Promise]
+  [Promise] :: *
+  '[ 'Stdio, 'Inet] :: [Promise]
+#+end_src
+
+*** For example
+
+annotate base functions
+
+#+begin_src haskell
+  -- System.Directory
+  getDirectoryContents :: FilePath -> IO [FilePath]
+#+end_src
+
+#+begin_src haskell
+  import qualified System.Directory           as D (getDirectoryContents)
+
+  getDirectoryContents :: FilePath -> Pledge zs '[ 'Rpath] [FilePath]
+  getDirectoryContents = Pledge . D.getDirectoryContents
+#+end_src
+
+*** A New Bind Operator
+
+#+begin_src haskell
+  -- System.OpenBSD.MultiPledge
+  (>>=) :: forall zs ps m qs a b.
+        ( MonadIO m, SingI zs, SingI ps, SingI qs
+        )
+     => Pledge (zs `Union` ps) qs m a
+     -> (a -> Pledge zs ps m b)
+     -> Pledge zs (ps `Union` qs) m b
+#+end_src
+
+best explained with a picture and some code
+
+** Closing
+*** Caveats
+
+ - no multithreading
+ - no exec promises
+ - redundant pledge calls
+ - not portable (so far)
+
+*** Resources
+
+ - [[https://github.com/cgohla/pledge][Haskell Pledge]]
+
+ - [[https://www.haskell.org][Haskell.org]]
+ - [[https://dl.acm.org/doi/abs/10.1145/292540.292555][Abadi et al., A core calculus of dependency]]
+
+*** Thanks
+
+Björn Gohla
+
+[[https://mathstodon.xyz/@6d03]]
+
+[[https://6d03.info]]

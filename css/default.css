@@ -144,13 +144,14 @@ article .header {
 code {
     font-family: monospace;
     font-size:  62.5%;
-    color: white;
 }
 
 .sourceCode {
     background-color: black;
+    color: white;
 }
 
 .example {
     background-color: black;
+    color: white;
 }
