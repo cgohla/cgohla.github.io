@@ -1,0 +1,27 @@
+Mealy machines are functions =m:s×i→s×o= or, equivalently, a pair of
+functions =m₀:s×i→s, m₁:s×i→o=.  =s= is the state space, =i= is the
+input alphabet, and =o= is the output alphabet.
+
+In some important applications =s,i,o= are finite, e.g., regexp
+lexers.
+
+A Mealy machine gives rise to a graph =π,m₀:s×i⇉s=. In case =s= is
+finite this can be drawn:
+
+#+begin_src dot :file onoff.png :exports none :cmd circo
+digraph onoff {
+    on -> off [taillabel="toggle"]
+    off -> on [taillabel="toggle"]
+}
+#+end_src
+
+#+RESULTS:
+[[file:onoff.png]]
+
+
+In other applications, they are infinite, or at least too
+large to draw easily.
+
+#+begin_src haskell
+  
+#+end_src
