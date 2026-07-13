@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>2026-03-13-architecture-layers</title>
+        <link rel="stylesheet" href="../css/default.css" />
+    </head>
+    <body>
+        <header>
+            <div class="logo">
+                <a href="../">Björn Gohla</a>
+            </div>
+            <nav>
+                <a href="../">Home</a>
+                <a href="../projects.html">Projects</a>
+                <a href="../archive.html">Archive</a>
+                <a href="../hireme.html">Hire Me</a>
+            </nav>
+        </header>
+
+        <main role="main">
+            <h1>2026-03-13-architecture-layers</h1>
+            <article>
+    <section class="header">
+        Posted on March 13, 2026
+        
+    </section>
+    <section>
+        <h1 id="introduction">Introduction</h1>
+<h1 id="software-layers">Software Layers</h1>
+<p>Typically we want to structure applications into layers, in order to
+keep them understandable. As an example, we might have a web
+application with the following structure:</p>
+<pre class="ascii"><code>web API
+------------------------------
+business logic
+------------------------------
+persistence
+  and upstream service clients
+</code></pre>
+<div class="sourceCode" id="cb2" data-file="layer-separation/layers.svg" data-results="output verbatim drawer file" data-cache="yes"><pre class="sourceCode dot"><code class="sourceCode dot"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="va">strict</span> <span class="kw">digraph</span> <span class="at">layers</span> <span class="ot">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">    </span><span class="at">shape</span><span class="ot">=</span><span class="va">box</span><span class="ot">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">    </span><span class="va">a</span><span class="ot">[</span><span class="at">label</span><span class="ot">=</span><span class="st">&quot;API&quot;</span><span class="ot">];</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">    </span><span class="va">b</span><span class="ot">[</span><span class="at">label</span><span class="ot">=</span><span class="st">&quot;business logic&quot;</span><span class="ot">];</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">    </span><span class="va">c</span><span class="ot">[</span><span class="at">label</span><span class="ot">=</span><span class="st">&quot;persistence and upstream service clients&quot;</span><span class="ot">];</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="ot">}</span></span></code></pre></div>
+<p>where the flow of control is from top to bottom, and then back up
+again. I.e., this application receives requests through API endpoints
+exposed via HTTP; the request data is validated and mapped to events
+in the business domain, which in turn can trigger access to the
+application database or calls to other services, these then return
+data back to the business logic; and finally, we return a response for
+the web API request.</p>
+<p>This is not at all a new idea.</p>
+<h1 id="layer-violation">Layer Violation</h1>
+<p>The important idea behind the diagram above, is that each layer can
+only interact with the layer below; and only trough a well defined
+interface. However, even with the best intentions, an application code
+base which is set up to follow this architecture can quickly evolve
+into a tangled mess where business logic is implemented in HTTP
+handlers, and calls are made directly to supporting services.</p>
+<p>This degrades the understandability of the implementation over time,
+makes it harder to adapt to new domain requirements, and frustates new
+consributors.</p>
+<h1 id="haskell-packages">Haskell Packages</h1>
+<p>To prevent the layer separation from being broken too easily we can
+try to enlist the help of language and build system features.</p>
+<p>Consider a situation where we have at least one module per layer. A
+module in a layer can access functions in modules in the layer below,
+by importing these modules. We can only prevent access to functions in
+layers further below by just not importing modules from those layers.</p>
+<p>But once each layer contains more than a few modules, it may no longer
+be apparent which modules belong to which layers, and which modules
+are allowed to import which other modules. Naming module conventions
+may be able to help a bit, but they still don’t provide automatically
+enforced boundaries. Unless there is an automatic check to flag import
+relations that violate the layer separation, sooner or later someone
+will write code that does.</p>
+<p>So we need a way to formally describe which modules are part of which
+layer, and have that checked at build time. One obvious way to do that
+in Haskell is using cabal packages and package components. That is, we
+put the modules for the layers into separate packages.</p>
+<p>As a starting point, we put all modules into the main library of a
+layer package. Then we can express the dependency of an upper layer on
+a lower layer by adding the lower layer package library as an item to
+the <code>build-depends:</code> field in the upper layer package library. Since
+we do no add layer packages from further below, the upper layer can
+not see or access layers below and therefore not skip layers. Circular
+dependencies of packages are likewise not allowed, so we can also be
+sure that nowhere in a lower layer is there a call to any function
+from a layer above.</p>
+<p>To actually pin down how a layer interacts with the layer below it, we
+also need to make sure that a layer only calls into a layer below via
+a defined interface. We might try to enforce this by only listing
+modules that implement the public interface to a layer as exposed
+modules in the respective package component description, and keep all
+other modules private. This certainly works for preventing the layer
+above from seeing anything but the public interface.</p>
+<p>But if we want to implement a test component in the package, we need
+to expose all the modules whose functions we want to test.</p>
+<h1 id="package-pattern-for-layer-isolation">Package Pattern for Layer Isolation</h1>
+<p>the solution is to separate out the interface specification in the
+lower layer from the implementation into a third package, that is
+depended upon by both the package for the upper layer and the
+implementation package for the lower layer. the interface
+specification could be in the form of type aliases for functions,
+and associated parameter types; or better yet, in the form of an
+algebraic effect type.</p>
+<p>we get the following picture</p>
+<pre class="ascii"><code>   upper layer package -------\
+              |
+              V
+           lower layer interface package
+              A
+              |
+lower layer implementation -------/
+package
+</code></pre>
+<p>the upper layer can now call into the lower layer by using higher
+order function parameters, or effects. this requires a further package
+to actually supply the implementation in the lower layer to the
+consumers in the upper layer by applying consuming functions in the
+upper layer to implementation in the lower layer, or else, by invoking
+effect runnners from the lower layer. so we get this picture:</p>
+<pre class="ascii"><code>         upper layer package -------\
+           A                        |
+           |                        V
+integrating package -------&gt; lower layer interface package
+           |                        A
+           V                        |
+      lower layer implementation -------/
+      package
+</code></pre>
+<p>the horizontal dependency may not actually be needed.</p>
+<p>with these package dependency relations in place, we will get a build
+error if upper layer modules try to import modules from further down
+the stack. great!</p>
+<p>the integrating package can see all modules, and can connect the
+pieces.</p>
+<p>there will be packages that fall outside the layer hierarchy, e.g.,
+the integrating package and packges containing value types (both as
+part of a project, and also from the wider ecosystem). so we should
+establish a naming convention for packages and libraries to make it
+clear which of them are part of the layer hierarchy and which role
+they play there.</p>
+<h1 id="visualizing-dependency-relationships">Visualizing Dependency Relationships</h1>
+<div class="sourceCode" id="cb5" data-file="layer-separation/layer-separation.svg" data-results="output verbatim drawer file" data-cache="yes"><pre class="sourceCode dot"><code class="sourceCode dot"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="va">strict</span> <span class="kw">digraph</span> <span class="va">layer_separation</span> <span class="ot">{</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">   </span><span class="va">a</span><span class="co"> </span><span class="ot">[</span><span class="at">shape</span><span class="ot">=</span><span class="va">record</span><span class="co">, </span><span class="at">label</span><span class="ot">=</span><span class="st">&quot;{ API | domain model | { persistence | supporting services } }&quot;</span><span class="ot">]</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="ot">}</span></span></code></pre></div>
+<div class="RESULTS drawer">
+<p><img src="layer-separation/layer-separation.svg" /></p>
+</div>
+<h1 id="automatically-enforcing-layer-boundaries">Automatically Enforcing Layer Boundaries</h1>
+<h1 data-header-args=":mkdirp yes" data-header-args+=":noweb yes" id="an-example">An Example</h1>
+<h2 id="the-project-file">The project file</h2>
+<pre class="cabal" data-tangle="layer-separation/cabal.project"><code>packages: *
+</code></pre>
+<h2 id="the-api-package">The API package</h2>
+<pre class="cabal" data-tangle="layer-separation/foo-api/foo-api.cabal"><code>&lt;&lt;cabal-header&gt;&gt;
+name: foo-api
+
+library
+  exposed-modules: Api
+  build-depends: base &gt;= 4.0 &amp;&amp; &lt; 5.0, foo-core
+  default-language: GHC2021
+</code></pre>
+<div class="sourceCode" id="cb8" data-tangle="layer-separation/foo-api/Api.hs"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> <span class="dt">Api</span> <span class="kw">where</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Core</span> <span class="kw">qualified</span> <span class="kw">as</span> <span class="dt">Core</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">System</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="ot">endpoint ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>endpoint <span class="ot">=</span> \<span class="kw">case</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  [<span class="st">&quot;show&quot;</span>] <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    (<span class="dt">Core.Name</span> name, <span class="dt">Core.Age</span> age) <span class="ot">&lt;-</span> Core.getPerson</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">putStrLn</span> <span class="op">$</span> <span class="st">&quot;Name: &quot;</span> <span class="op">&lt;&gt;</span> name <span class="op">&lt;&gt;</span> <span class="st">&quot;, &quot;</span> <span class="op">&lt;&gt;</span> <span class="st">&quot;Age: &quot;</span> <span class="op">&lt;&gt;</span> (<span class="fu">show</span> age)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  [<span class="st">&quot;celebrate&quot;</span>] <span class="ot">=</span> Core.incrementAge</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  [<span class="st">&quot;create&quot;</span>, name] <span class="ot">=</span> Core.createPerson name</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  _ <span class="ot">=</span> System.exit <span class="dv">1</span></span></code></pre></div>
+<h2 id="the-core-package">The core package</h2>
+<pre class="cabal" data-tangle="layer-separation/foo-core/foo-core.cabal"><code>&lt;&lt;cabal-header&gt;&gt;
+name: foo-core
+
+library
+  exposed-modules: Core
+  build-depends: base &gt;= 4.0 &amp;&amp; &lt; 5.0, foo-persistence
+  default-language: GHC2021
+</code></pre>
+<div class="sourceCode" id="cb10" data-tangle="layer-separation/foo-core/Core.hs"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> <span class="dt">Core</span> <span class="kw">where</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Persistence</span> <span class="kw">qualified</span> <span class="kw">as</span> <span class="dt">Persistence</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Person</span> <span class="ot">=</span> <span class="dt">Person</span> { name<span class="op">:</span> <span class="dt">Name</span>, age<span class="op">:</span> <span class="dt">Age</span> }</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Name</span> <span class="ot">=</span> <span class="dt">Name</span> <span class="dt">String</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Age</span> <span class="ot">=</span> <span class="dt">Age</span> <span class="dt">Integer</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="co">-- setName :: GetRecord -&gt; SetRecord -&gt; Name -&gt; IO ()</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="co">-- setName getRecord setRecord name = do</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="co">--   (_name, age) &lt;- getRecord</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="co">--   setRecord (name, age)</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a><span class="ot">getPerson ::</span> <span class="dt">GetRecord</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">Person</span></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>getPerson getRecord <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>  (<span class="dt">Persistence.Name</span> name, <span class="dt">Persistence.Age</span> age) <span class="ot">&lt;-</span> getRecord</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pure</span> <span class="op">$</span> <span class="dt">Person</span> (<span class="dt">Name</span> name) (<span class="dt">Age</span> age)</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a><span class="ot">incrementAge ::</span> <span class="dt">GetRecord</span> <span class="ot">-&gt;</span> <span class="dt">PutRecord</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>incrementAge getRecord putRecord <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>  (<span class="dt">Persistence.Name</span> name, <span class="dt">Persistence.Age</span> age) <span class="ot">&lt;-</span> getRecord</span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>  putRecord (<span class="dt">Persistence.Name</span> name, <span class="dt">Persistence.Age</span> <span class="op">$</span> age <span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a><span class="ot">createPerson ::</span> <span class="dt">PutRecord</span> <span class="ot">-&gt;</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>createPerson putRecord name <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>  putRecord (<span class="dt">Persistence.Name</span> name, <span class="dt">Persistence.Age</span> <span class="dv">0</span>)</span></code></pre></div>
+<h2 id="the-persistence-package">The persistence package</h2>
+<pre class="cabal" data-tangle="layer-separation/foo-persistence/foo-persistence.cabal"><code>&lt;&lt;cabal-header&gt;&gt;
+name: foo-persistence
+
+library
+  exposed-modules: Persistence
+  build-depends: base &gt;= 4.0 &amp;&amp; &lt; 5.0, extra
+  default-language: GHC2021
+</code></pre>
+<div class="sourceCode" id="cb12" data-tangle="layer-separation/foo-persistence/Persistence.hs"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">module</span> <span class="dt">Persistence</span> <span class="kw">where</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.List.Extra</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Name</span> <span class="ot">=</span> <span class="dt">Name</span> <span class="dt">String</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Age</span> <span class="ot">=</span> <span class="dt">Age</span> <span class="dt">Integer</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">GetRecord</span> <span class="ot">=</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> (<span class="dt">Name</span>, <span class="dt">Age</span>)</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="ot">getRecord ::</span> <span class="dt">GetRecord</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>getRecord fp <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lines</span> <span class="ot">&lt;-</span> <span class="fu">lines</span> <span class="op">&lt;$&gt;</span> <span class="fu">readFile</span> fp</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>  <span class="kw">case</span> <span class="fu">words</span> <span class="op">&lt;$&gt;</span> <span class="fu">lines</span> <span class="kw">of</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>    [[<span class="st">&quot;Name:&quot;</span>, name],[<span class="st">&quot;Age:&quot;</span>, age]] <span class="ot">-&gt;</span> <span class="fu">pure</span> (<span class="dt">Name</span> <span class="op">$</span> trim name, <span class="dt">Age</span> <span class="op">$</span> <span class="fu">read</span> age)</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">PutRecord</span> <span class="ot">=</span> <span class="dt">FilePath</span> <span class="ot">-&gt;</span> <span class="dt">Name</span> <span class="ot">-&gt;</span> <span class="dt">Age</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a><span class="ot">putRecord ::</span> <span class="dt">PutRecord</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>putRecord fp (<span class="dt">Name</span> name) (<span class="dt">Age</span> age) <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">writeFile</span> fp <span class="op">$</span> <span class="st">&quot;Name: &quot;</span> <span class="op">&lt;&gt;</span> name <span class="op">&lt;&gt;</span> <span class="st">&quot;Age: &quot;</span> <span class="op">&lt;&gt;</span> (<span class="fu">show</span> age)</span></code></pre></div>
+<h1 id="references">References</h1>
+    </section>
+</article>
+
+        </main>
+
+        <footer>
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+        </footer>
+    </body>
+</html>

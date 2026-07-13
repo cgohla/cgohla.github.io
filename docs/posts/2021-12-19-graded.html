@@ -83,7 +83,7 @@ endofunctor <span class="math inline"><em>T</em></span> this means we require a 
 <p>In Haskell notation this is a <code>mu :: T(T a) -&gt; T a</code> . (The natural
 transformations eta and mu are better known in Haskell as <code>return</code> and
 <code>join</code> from the <code>Control.Monad</code> module)</p>
-<p>Continuing with our story: for <span class="math inline">(<em>T</em>,<em>η</em>,<em>μ</em>)</span> to actually be a monad the
+<p>Continuing with our story: for <span class="math inline">(<em>T</em>, <em>η</em>, <em>μ</em>)</span> to actually be a monad the
 natural transformations <span class="math inline"><em>η</em></span> and <span class="math inline"><em>μ</em></span> have to satisfy two axioms usually
 called UNIT and ASSOCIATIVITY<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>.</p>
 <figure>
@@ -95,7 +95,7 @@ called UNIT and ASSOCIATIVITY<a href="#fn2" class="footnote-ref" id="fnref2" rol
 <figcaption aria-hidden="true">ASSOCIATIVITY</figcaption>
 </figure>
 <p>Now the big shocking reveal is that the axioms for our lax 2-functor
-<span class="math inline"><em>T</em> : 1 → <em>C</em><em>A</em><em>T</em></span> look exactly like the monad axioms for <span class="math inline">(<em>T</em>:<em>H</em><em>a</em><em>s</em><em>k</em>→<em>H</em><em>a</em><em>s</em><em>k</em>,<em>η</em>,<em>μ</em>)</span>.</p>
+<span class="math inline"><em>T</em> : 1 → <em>C</em><em>A</em><em>T</em></span> look exactly like the monad axioms for <span class="math inline">(<em>T</em> : <em>H</em><em>a</em><em>s</em><em>k</em> → <em>H</em><em>a</em><em>s</em><em>k</em>, <em>η</em>, <em>μ</em>)</span>.</p>
 <p>Disregarding the fact that I have not actually given a precise
 definition of lax 2-functors, we now take it as established that there
 is a bijection between such <span class="math inline"><em>T</em> : 1 → <em>H</em><em>a</em><em>s</em><em>k</em></span> with object value <span class="math inline"><em>H</em><em>a</em><em>s</em><em>k</em></span>
@@ -107,7 +107,7 @@ something else is going to be a monoid. Let me explain what I mean by
 that.</p>
 <p>Monoids, i.e., sets with an associative and unital operation can be
 viewed as categories: introduce an object, let’s call it <span class="math inline">*</span>, and let
-the morphisms <span class="math inline"> *  → *</span> be the elements of the monoid. Then the monoid
+the morphisms <span class="math inline">* → *</span> be the elements of the monoid. Then the monoid
 operation is a composition operation for this category and the monoid
 unit is the identity morphism of the single object <span class="math inline">*</span>.</p>
 <p>(The object <span class="math inline">*</span> is not to be confused with the <code>Type</code> kind in
@@ -123,14 +123,14 @@ thing.</p>
 <h2 id="example">Example</h2>
 <p>As an example, let’s consider the monoid with elements <span class="math inline">0</span> and <span class="math inline">1</span> and
 the usual multiplication as the operation. Then clearly <span class="math inline">1</span> is the
-unit. As a category it has arrows <span class="math inline">0 :  *  → *</span> and <span class="math inline">1 :  *  → *</span> and
+unit. As a category it has arrows <span class="math inline">0 : * → *</span> and <span class="math inline">1 : * → *</span> and
 composition is just multiplication, as we have said. Let’s call this
 category <span class="math inline"><em>B</em></span>.</p>
 <p>We view <span class="math inline"><em>B</em></span> as a 2-category, and consider what it means to have a lax
 2-functor <span class="math inline"><em>T</em> : <em>B</em> → <em>C</em><em>A</em><em>T</em></span>. <span class="math inline"><em>T</em>(*)</span> is some category, for concreteness, we
 can continue to assume that’s <span class="math inline"><em>H</em><em>a</em><em>s</em><em>k</em></span>. Since <span class="math inline"><em>B</em></span> has 2 distinct arrows
 we get two <span class="math inline"><em>H</em><em>a</em><em>s</em><em>k</em></span> endo functors <span class="math inline"><em>T</em><sub>0</sub></span> and <span class="math inline"><em>T</em><sub>1</sub> : <em>H</em><em>a</em><em>s</em><em>k</em> → <em>H</em><em>a</em><em>s</em><em>k</em></span>.</p>
-<p>Note that <span class="math inline"><em>T</em><sub>1</sub></span> is the image of the identity <span class="math inline">1 :  *  → *</span> under the lax
+<p>Note that <span class="math inline"><em>T</em><sub>1</sub></span> is the image of the identity <span class="math inline">1 : * → *</span> under the lax
 2-functor, so laxness means there must be a natural transformation
 <span class="math inline"><em>η</em> : <em>I</em><em>d</em><sub><em>H</em><em>a</em><em>s</em><em>k</em></sub> ⇒ <em>T</em><sub>1</sub></span>.</p>
 <p>Also by laxness of <span class="math inline"><em>T</em></span>, as part of its data, there are natural
